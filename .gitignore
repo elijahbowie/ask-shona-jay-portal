@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.vite/
+
+# Cloudflare local state and generated runtime files
+.wrangler/
+.mf/
+worker-configuration.d.ts
+
+# Local environment and secrets
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.crt
+
+# Seed/run artifacts with production object identifiers
+.seed-preview-knowledge/
+raw/
+
+# Logs and editor/system files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.idea/
+.vscode/

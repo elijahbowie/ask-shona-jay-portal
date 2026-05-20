@@ -1,0 +1,200 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ask-shona-jay-portal",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-05-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "ENVIRONMENT": "development",
+    "APP_ORIGIN": "http://localhost:8787",
+    "SESSION_COOKIE": "__Host_ask_shona_session",
+    "ADMIN_ACCESS_EMAILS": "admin@beyondfreedomfinancial.com,elijah@example.com",
+    "AI_LOG_PAYLOADS": "false",
+    "GHL_ENABLED": "false"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ask-shona-jay-db",
+      "database_id": "00000000-0000-0000-0000-000000000001"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "CONTENT_BUCKET",
+      "bucket_name": "ask-shona-jay-content"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "INGEST_QUEUE",
+        "queue": "ask-shona-jay-ingest"
+      },
+      {
+        "binding": "GHL_RETRY_QUEUE",
+        "queue": "ask-shona-jay-ghl-retry"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "ask-shona-jay-ingest",
+        "max_batch_size": 5,
+        "max_batch_timeout": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "ask-shona-jay-ingest-dlq"
+      },
+      {
+        "queue": "ask-shona-jay-ghl-retry",
+        "max_batch_size": 5,
+        "max_batch_timeout": 10,
+        "max_retries": 5,
+        "dead_letter_queue": "ask-shona-jay-ghl-dlq"
+      }
+    ]
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "vectorize": [
+    {
+      "binding": "VECTOR_INDEX",
+      "index_name": "ask-shona-jay-knowledge"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "ask-shona-jay-portal-staging",
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "APP_ORIGIN": "https://staging.beyondfreedomfinancial.com",
+        "SESSION_COOKIE": "__Host_ask_shona_session",
+        "ADMIN_ACCESS_EMAILS": "admin@beyondfreedomfinancial.com",
+        "AI_LOG_PAYLOADS": "false",
+        "GHL_ENABLED": "true"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ask-shona-jay-db-staging",
+          "database_id": "00000000-0000-0000-0000-000000000002"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "CONTENT_BUCKET",
+          "bucket_name": "ask-shona-jay-content-staging"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "INGEST_QUEUE",
+            "queue": "ask-shona-jay-ingest-staging"
+          },
+          {
+            "binding": "GHL_RETRY_QUEUE",
+            "queue": "ask-shona-jay-ghl-retry-staging"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "ask-shona-jay-ingest-staging",
+            "max_batch_size": 5,
+            "max_batch_timeout": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "ask-shona-jay-ingest-dlq-staging"
+          },
+          {
+            "queue": "ask-shona-jay-ghl-retry-staging",
+            "max_batch_size": 5,
+            "max_batch_timeout": 10,
+            "max_retries": 5,
+            "dead_letter_queue": "ask-shona-jay-ghl-dlq-staging"
+          }
+        ]
+      },
+      "ai": {
+        "binding": "AI"
+      },
+      "vectorize": [
+        {
+          "binding": "VECTOR_INDEX",
+          "index_name": "ask-shona-jay-knowledge-staging"
+        }
+      ]
+    },
+    "production": {
+      "name": "ask-shona-jay-portal",
+      "routes": [
+        {
+          "pattern": "ask.beyondfreedomfinancial.com",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "APP_ORIGIN": "https://ask.beyondfreedomfinancial.com",
+        "SESSION_COOKIE": "__Host_ask_shona_session",
+        "ADMIN_ACCESS_EMAILS": "admin@beyondfreedomfinancial.com",
+        "AI_LOG_PAYLOADS": "false",
+        "GHL_ENABLED": "true"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ask-shona-jay-db-production",
+          "database_id": "ed6e900f-3179-4747-b151-97eb683b0bb2"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "CONTENT_BUCKET",
+          "bucket_name": "ask-shona-jay-content-production"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "INGEST_QUEUE",
+            "queue": "ask-shona-jay-ingest-production"
+          },
+          {
+            "binding": "GHL_RETRY_QUEUE",
+            "queue": "ask-shona-jay-ghl-retry-production"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "ask-shona-jay-ingest-production",
+            "max_batch_size": 5,
+            "max_batch_timeout": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "ask-shona-jay-ingest-dlq-production"
+          },
+          {
+            "queue": "ask-shona-jay-ghl-retry-production",
+            "max_batch_size": 5,
+            "max_batch_timeout": 10,
+            "max_retries": 5,
+            "dead_letter_queue": "ask-shona-jay-ghl-dlq-production"
+          }
+        ]
+      },
+      "ai": {
+        "binding": "AI"
+      },
+      "vectorize": [
+        {
+          "binding": "VECTOR_INDEX",
+          "index_name": "ask-shona-jay-knowledge-production"
+        }
+      ]
+    }
+  }
+}
