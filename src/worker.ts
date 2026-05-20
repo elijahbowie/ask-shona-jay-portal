@@ -33,7 +33,7 @@ app.use(
     origin: (origin, c) => origin || c.env.APP_ORIGIN,
     credentials: true,
     allowHeaders: ["Content-Type", "X-GoHighLevel-Signature"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   })
 );
 
@@ -42,7 +42,7 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Content-Type-Options", "nosniff");
   c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-  c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  c.header("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
   c.header("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https://images.unsplash.com https://picsum.photos; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'");
 });
 
@@ -264,7 +264,53 @@ app.get("/api/plan", async (c) => {
       strategyKey: "augusta-rule"
     });
   }
-  return c.json({ items });
+  try {
+    const progressRows = await all<{ title: string; done: number }>(
+      c.env,
+      "SELECT title, done FROM plan_item_progress WHERE tenant_id = ? AND client_id = ?",
+      tenantId(),
+      session.client.id
+    );
+    const progress = new Map(progressRows.map((row) => [row.title, Boolean(row.done)]));
+    return c.json({
+      items: items.map((item, index) => ({
+        ...item,
+        done: progress.has(item.title) ? Boolean(progress.get(item.title)) : index === 0
+      }))
+    });
+  } catch {
+    return c.json({ items: items.map((item, index) => ({ ...item, done: index === 0 })) });
+  }
+});
+
+app.patch("/api/plan/items", async (c) => {
+  const session = await requireClient(c);
+  const body = await readJson<{ title?: string; strategyKey?: string; done?: boolean }>(c.req.raw);
+  if (!body.title || typeof body.done !== "boolean") {
+    return c.json({ error: "Plan item title and done state are required." }, 400);
+  }
+  const now = nowIso();
+  await run(
+    c.env,
+    `INSERT INTO plan_item_progress (
+      id, tenant_id, client_id, title, strategy_key, done, committed_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(tenant_id, client_id, title) DO UPDATE SET
+      strategy_key = excluded.strategy_key,
+      done = excluded.done,
+      committed_at = excluded.committed_at,
+      updated_at = excluded.updated_at`,
+    createId("plan"),
+    tenantId(),
+    session.client.id,
+    body.title,
+    body.strategyKey || "general",
+    body.done ? 1 : 0,
+    body.done ? now : null,
+    now,
+    now
+  );
+  return c.json({ ok: true });
 });
 
 app.get("/api/admin/dashboard", async (c) => {
