@@ -23,6 +23,11 @@ worker-configuration.d.ts
 .seed-preview-knowledge/
 raw/
 
+# Proprietary client training media and generated transcripts
+Office Hours Recordings/
+Updated Trainings/
+Transcriptions/
+
 # Logs and editor/system files
 *.log
 npm-debug.log*
