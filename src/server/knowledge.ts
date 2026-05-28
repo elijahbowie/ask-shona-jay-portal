@@ -36,13 +36,23 @@ const TAX_RISK_PATTERNS = [
   /\bcourt\b/i,
   /\blegal\b/i,
   /\bentity change\b/i,
+  /\bentity setup\b/i,
+  /\basset protection\b/i,
   /\bswitch.*s.?corp\b/i,
+  /\blate s.?corp election\b/i,
+  /\bform 2553\b/i,
   /\bs.?corp\b/i,
   /\bdistribution(s)?\b/i,
   /\breasonable compensation\b/i,
   /\bcontractor\b/i,
   /\bworker classification\b/i,
   /\bclassify\b/i,
+  /\breal estate professional\b/i,
+  /\bmaterial participation\b/i,
+  /\bshort[- ]term rental\b/i,
+  /\bcost segregation\b/i,
+  /\bmedical reimbursement\b/i,
+  /\bhealth reimbursement\b/i,
   /\bguarantee\b/i,
   /\bexact amount\b/i
 ];
@@ -87,6 +97,46 @@ const STRATEGY_QUERY_PATTERNS: Array<{ strategyKey: string; patterns: RegExp[] }
   {
     strategyKey: "home-office",
     patterns: [/\bhome office\b/i, /\bbusiness use of home\b/i]
+  },
+  {
+    strategyKey: "meals",
+    patterns: [/\bmeal(s)?\b/i, /\bdeduct\b.*\b(meal|restaurant|food)\b/i, /\bbusiness\b.*\bmeal/i]
+  },
+  {
+    strategyKey: "travel",
+    patterns: [/\btravel\b/i, /\bbusiness trip\b/i, /\bdeduct\b.*\b(flight|hotel|airfare|lodging)\b/i]
+  },
+  {
+    strategyKey: "medical-reimbursement",
+    patterns: [/\bmedical reimbursement\b/i, /\bhealth reimbursement\b/i, /\bmedical\b.*\bwrite.?off/i, /\bhealth\b.*\bdeduct/i]
+  },
+  {
+    strategyKey: "cost-segregation",
+    patterns: [/\bcost segregation\b/i, /\bcost seg\b/i, /\baccelerat(e|ed|ing)\b.*\bdepreciation\b/i]
+  },
+  {
+    strategyKey: "real-estate-professional",
+    patterns: [/\breal estate professional\b/i, /\brep status\b/i, /\b750\b.*\bhours\b/i]
+  },
+  {
+    strategyKey: "short-term-rental",
+    patterns: [/\bshort[- ]term rental\b/i, /\bstr\b/i, /\bairbnb\b/i, /\bmaterial participation\b/i]
+  },
+  {
+    strategyKey: "entity-protection",
+    patterns: [/\bentity\b/i, /\basset protection\b/i, /\bllc\b.*\bprotect/i, /\bprotect\b.*\basset/i]
+  },
+  {
+    strategyKey: "late-s-corp-election",
+    patterns: [/\blate\b.*\bs.?corp\b/i, /\bform 2553\b/i, /\bs.?corp election\b/i]
+  },
+  {
+    strategyKey: "llc-to-s-corp",
+    patterns: [/\bconvert\b.*\bs.?corp\b/i, /\bllc\b.*\bs.?corp\b/i, /\bswitch\b.*\bs.?corp\b/i]
+  },
+  {
+    strategyKey: "depreciation",
+    patterns: [/\bdepreciation\b/i, /\bbonus depreciation\b/i, /\bplaced in service\b/i]
   }
 ];
 
@@ -445,6 +495,21 @@ function buildNextSteps(question: string, chunks: RetrievedChunk[], risk: string
   }
   if (/estimate|quarter|deadline/i.test(question)) {
     base.push("Review year-to-date profit and book a review before the payment deadline if income changed.");
+  }
+  if (/meal/i.test(question)) {
+    base.push("Keep the receipt, attendees, business purpose, and notes showing how the meal relates to the business.");
+  }
+  if (/travel|trip|flight|hotel|lodging/i.test(question)) {
+    base.push("Save the itinerary, receipts, calendar purpose, and notes separating business and personal time.");
+  }
+  if (/s.?corp|2553|election|distribution/i.test(question)) {
+    base.push("Ask the team to review entity status, payroll, reasonable compensation, and election timing before acting.");
+  }
+  if (/real estate professional|short[- ]term rental|material participation|cost seg/i.test(question)) {
+    base.push("Gather hours, activity logs, property details, and depreciation records before requesting strategy review.");
+  }
+  if (/medical|health reimbursement/i.test(question)) {
+    base.push("Confirm entity type, plan setup, payment path, and reimbursement documentation with the team first.");
   }
   if (risk !== "general_education") {
     base.push("Escalate this question for CPA review before acting.");
