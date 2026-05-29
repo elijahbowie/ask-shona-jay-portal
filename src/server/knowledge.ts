@@ -127,6 +127,102 @@ const STRATEGY_QUERY_PATTERNS: Array<{ strategyKey: string; patterns: RegExp[] }
     patterns: [/\bpersonalized tax plan\b/i, /\bvault\b/i, /\bwhich lesson\b/i, /\bwhere should i start\b/i]
   },
   {
+    strategyKey: "s-corp-reasonable-compensation",
+    patterns: [/\bs.?corp\b.*\bpayroll\b/i, /\breasonable compensation\b/i, /\bofficer compensation\b/i, /\bowner salary\b/i, /\bdistributions?\b.*\bpayroll\b/i]
+  },
+  {
+    strategyKey: "estimated-tax-system",
+    patterns: [/\bestimated tax(es)?\b/i, /\bquarterly\b.*\bpayment(s)?\b/i, /\btax reserve\b/i, /\b30[- ]day\b.*\btax\b/i]
+  },
+  {
+    strategyKey: "accountable-plan-system",
+    patterns: [/\baccountable plan\b/i, /\breimburse(ment|ments)?\b.*\bplan\b/i, /\breturn\b.*\bexcess\b/i, /\bsubstantiat(e|ion)\b.*\breimburse/i]
+  },
+  {
+    strategyKey: "qbi-deduction-review",
+    patterns: [/\bqbi\b/i, /\bqualified business income\b/i, /\b199a\b/i, /\bsstb\b/i]
+  },
+  {
+    strategyKey: "worker-classification-review",
+    patterns: [/\bworker classification\b/i, /\bcontractor\b.*\bemployee\b/i, /\b1099\b.*\bworker\b/i, /\bclassify\b.*\bworker\b/i]
+  },
+  {
+    strategyKey: "business-loss-limits",
+    patterns: [/\bbusiness loss(es)?\b/i, /\bat[- ]risk\b/i, /\bpassive loss(es)?\b/i, /\bnol\b/i, /\bnet operating loss\b/i, /\bsuspended loss(es)?\b/i]
+  },
+  {
+    strategyKey: "schedule-c-to-entity",
+    patterns: [/\bschedule c\b/i, /\bsole proprietor\b.*\bentity\b/i, /\bmove\b.*\bllc\b/i, /\btransition\b.*\bentity\b/i]
+  },
+  {
+    strategyKey: "irs-account-notice-workflow",
+    patterns: [/\birs\b.*\bnotice\b/i, /\btax transcript\b/i, /\baccount transcript\b/i, /\brefund\b.*\bmissing\b/i, /\bwhere'?s my refund\b/i]
+  },
+  {
+    strategyKey: "basis-tracking-system",
+    patterns: [/\bbasis\b/i, /\bbasis tracking\b/i, /\badjusted basis\b/i, /\binherited\b.*\bbasis\b/i, /\bk-1\b.*\bbasis\b/i]
+  },
+  {
+    strategyKey: "hsa-medical-decision-tree",
+    patterns: [/\bhsa\b/i, /\bhigh deductible\b/i, /\bmedical\b.*\bdecision tree\b/i, /\bmedical\b.*\bdeduct(ion)?\b/i]
+  },
+  {
+    strategyKey: "social-security-retirement-tax-planning",
+    patterns: [/\bsocial security\b/i, /\bretirement\b.*\btax\b/i, /\bmedicare\b.*\bretirement\b/i, /\bpension\b/i, /\bretirement income\b/i]
+  },
+  {
+    strategyKey: "year-end-strategy-review",
+    patterns: [/\byear[- ]end\b/i, /\bend of year\b.*\bstrategy\b/i, /\bdecember\b.*\btax\b/i, /\bcloseout\b.*\bstrategy\b/i]
+  },
+  {
+    strategyKey: "hire-kids-implementation-kit",
+    patterns: [/\bhir(e|ing)\b.*\b(kid|kids|child|children)\b.*\b(kit|timesheet|job description|payroll)\b/i, /\btimesheet\b.*\b(kid|child)/i]
+  },
+  {
+    strategyKey: "augusta-rule-meeting-packet",
+    patterns: [/\baugusta\b.*\b(packet|minutes|agenda|invoice)\b/i, /\b(packet|minutes|agenda|invoice)\b.*\baugusta\b/i, /\bhome rental\b.*\bmeeting\b/i]
+  },
+  {
+    strategyKey: "vehicle-mileage-actual-expense-kit",
+    patterns: [/\bmileage\b.*\b(actual|standard|kit|log)\b/i, /\bvehicle\b.*\bexpense\b.*\bkit\b/i]
+  },
+  {
+    strategyKey: "business-travel-trip-memo-kit",
+    patterns: [/\btrip memo\b/i, /\btravel\b.*\b(memo|kit|allocation)\b/i, /\bmixed[- ]purpose\b.*\btrip\b/i]
+  },
+  {
+    strategyKey: "home-office-reimbursement-worksheet",
+    patterns: [/\bhome office\b.*\bworksheet\b/i, /\bhome office\b.*\breimburse(ment)?\b/i]
+  },
+  {
+    strategyKey: "real-estate-strategy-intake-packet",
+    patterns: [/\breal estate\b.*\bintake\b/i, /\bcost seg\b.*\bpacket\b/i, /\bstr\b.*\bintake\b/i, /\brep\b.*\blog\b/i]
+  },
+  {
+    strategyKey: "accountable-plan-monthly-kit",
+    patterns: [/\baccountable plan\b.*\bkit\b/i, /\bmonthly\b.*\breimbursement\b.*\bkit\b/i]
+  },
+  {
+    strategyKey: "worker-classification-intake-checklist",
+    patterns: [/\bworker\b.*\bclassification\b.*\bchecklist\b/i, /\bchecklist\b.*\b(contractor|worker|classification)\b/i, /\bcontractor\b.*\b(intake|checklist|paying|payment)\b/i]
+  },
+  {
+    strategyKey: "estimated-tax-30-day-kit",
+    patterns: [/\bestimated tax\b.*\b30[- ]day\b/i, /\bquarterly\b.*\breview\b.*\bkit\b/i]
+  },
+  {
+    strategyKey: "tax-vault-file-structure",
+    patterns: [/\btax vault\b/i, /\bvault\b.*\bfile\b/i, /\borganize\b.*\btax document(s)?\b/i]
+  },
+  {
+    strategyKey: "irs-notice-response-packet",
+    patterns: [/\birs notice\b.*\bpacket\b/i, /\bnotice\b.*\bresponse\b/i]
+  },
+  {
+    strategyKey: "year-end-closeout-kit",
+    patterns: [/\byear[- ]end\b.*\bcloseout\b/i, /\bstrategy\b.*\bcloseout\b/i]
+  },
+  {
     strategyKey: "hire-kids",
     patterns: [/\bhir(e|ing)\b.*\b(kid|kids|child|children)\b/i, /\b(kid|kids|child|children)\b.*\bpayroll\b/i]
   },
@@ -294,6 +390,7 @@ export async function retrieveChunks(env: Env, client: ClientProfile, question: 
   );
   const questionTerms = tokenize(question);
   const explicitStrategyKeys = matchingStrategyKeys(question);
+  const preferredKeys = preferredStrategyKeys(question);
   const clientTerms = new Set([...client.tags.map(normalizeTerm), normalizeTerm(client.entityType), normalizeTerm(client.lifecycleStage)]);
 
   return rows
@@ -303,7 +400,7 @@ export async function retrieveChunks(env: Env, client: ClientProfile, question: 
       const strategyBoost = clientTerms.has(normalizeTerm(row.strategy_key)) ? 1.2 : 0;
       const childrenBoost = client.hasChildren && row.strategy_key.includes("hire-kids") ? 1.3 : 0;
       const exactPhraseBoost = row.text.toLowerCase().includes(question.toLowerCase().slice(0, 24)) ? 2 : 0;
-      const strategyIntentBoost = strategyMatchesQuestion(row.strategy_key, question) ? 6 : 0;
+      const strategyIntentBoost = strategyMatchBoost(row.strategy_key, question);
       const vectorBoost = (vectorScores.get(row.id) ?? 0) * 4;
       const score = termOverlap + strategyBoost + childrenBoost + exactPhraseBoost + strategyIntentBoost + vectorBoost;
       const relevantToQuestion = termOverlap > 0 || exactPhraseBoost > 0 || strategyIntentBoost > 0 || vectorBoost > 0;
@@ -316,6 +413,7 @@ export async function retrieveChunks(env: Env, client: ClientProfile, question: 
     })
     .filter((item) => item.score > 0.2 && item.relevantToQuestion)
     .filter((item) => explicitStrategyKeys.size === 0 || explicitStrategyKeys.has(item.row.strategy_key))
+    .filter((item) => preferredKeys.size === 0 || preferredKeys.has(item.row.strategy_key))
     .sort((left, right) => right.score - left.score)
     .slice(0, 6);
 }
@@ -324,11 +422,31 @@ function strategyMatchesQuestion(strategyKey: string, question: string): boolean
   return STRATEGY_QUERY_PATTERNS.some((item) => item.strategyKey === strategyKey && item.patterns.some((pattern) => pattern.test(question)));
 }
 
+function strategyMatchBoost(strategyKey: string, question: string): number {
+  if (!strategyMatchesQuestion(strategyKey, question)) {
+    return 0;
+  }
+  const implementationTerms = /\b(kit|packet|checklist|worksheet|memo|intake|closeout|file structure|30[- ]day)\b/i;
+  const isImplementationPage = /\b(kit|packet|checklist|worksheet)\b/.test(strategyKey);
+  return implementationTerms.test(question) && isImplementationPage ? 10 : 6;
+}
+
 function matchingStrategyKeys(question: string): Set<string> {
   return new Set(
     STRATEGY_QUERY_PATTERNS
       .filter((item) => item.patterns.some((pattern) => pattern.test(question)))
       .map((item) => item.strategyKey)
+  );
+}
+
+function preferredStrategyKeys(question: string): Set<string> {
+  const implementationTerms = /\b(kit|packet|checklist|worksheet|memo|intake|closeout|file structure|30[- ]day)\b/i;
+  if (!implementationTerms.test(question)) {
+    return new Set();
+  }
+  return new Set(
+    Array.from(matchingStrategyKeys(question))
+      .filter((strategyKey) => /\b(kit|packet|checklist|worksheet)\b/.test(strategyKey))
   );
 }
 
@@ -437,6 +555,7 @@ async function generateGroundedAnswer(
     "Use only the approved source excerpts provided.",
     "Speak directly to the client using you and your; do not refer to them as the client.",
     "Do not provide personalized CPA, legal, filing, penalty, audit, or guarantee advice.",
+    "Do not refuse when the source excerpts contain a general setup workflow; give the source-grounded checklist and state that the team must confirm fact-specific decisions.",
     "If the question depends on exact client facts, say the team should review it before action.",
     "Keep the response concise and practical. Do not invent citations; the app displays citations separately."
   ].join(" ");
@@ -452,7 +571,7 @@ async function generateGroundedAnswer(
   ];
 
   const gatewayAnswer = await generateViaAiGateway(env, messages);
-  if (gatewayAnswer) {
+  if (gatewayAnswer && !isUnhelpfulRefusal(gatewayAnswer.answer)) {
     return gatewayAnswer;
   }
 
@@ -467,13 +586,18 @@ async function generateGroundedAnswer(
       max_tokens: 420
     });
     const response = (result as { response?: string }).response?.trim();
-    if (!response || response.length < 40) {
+    if (!response || response.length < 40 || isUnhelpfulRefusal(response)) {
       return null;
     }
     return { answer: response, modelId: "workers-ai/llama-3.1-8b-source-grounded" };
   } catch {
     return null;
   }
+}
+
+function isUnhelpfulRefusal(answer: string): boolean {
+  const normalized = answer.toLowerCase();
+  return normalized.includes("i can't provide") || normalized.includes("i cannot provide") || normalized.includes("i'm unable to provide");
 }
 
 async function generateViaAiGateway(
