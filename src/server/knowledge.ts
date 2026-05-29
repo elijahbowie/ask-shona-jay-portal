@@ -59,6 +59,74 @@ const TAX_RISK_PATTERNS = [
 
 const STRATEGY_QUERY_PATTERNS: Array<{ strategyKey: string; patterns: RegExp[] }> = [
   {
+    strategyKey: "receipt-management",
+    patterns: [/\breceipt(s)?\b/i, /\borganize\b.*\breceipt/i, /\bmonthly books?\b/i, /\bbookkeeping\b/i, /\bcategory\b.*\bexpense/i]
+  },
+  {
+    strategyKey: "business-intention",
+    patterns: [/\bbusiness intention\b/i, /\bintent\b.*\bdocument/i, /\bbusiness purpose\b/i, /\bdocument\b.*\bpurpose/i, /\bwrite.?off\b.*\bpurpose/i]
+  },
+  {
+    strategyKey: "audit-defense-documentation",
+    patterns: [/\baudit\b/i, /\birs\b.*\bproof\b/i, /\bdeposit(s)?\b.*\bincome\b/i, /\bbank statement(s)?\b/i, /\bdefend\b.*\bdeduction/i]
+  },
+  {
+    strategyKey: "tax-intake-roadmap",
+    patterns: [/\btax questionnaire\b/i, /\bintake\b/i, /\bupload\b.*\btax document/i, /\btax document(s)?\b/i, /\broadmap\b/i]
+  },
+  {
+    strategyKey: "1099-business-flow",
+    patterns: [/\b1099\b.*\b(llc|business)\b/i, /\bpaid\b.*\bpersonally\b/i, /\bincome\b.*\bbusiness account\b/i, /\bbroker(age)?\b.*\bpay/i]
+  },
+  {
+    strategyKey: "augusta-payment-cadence",
+    patterns: [/\baugusta\b.*\b(pay|payment|money|draw)\b/i, /\brent\b.*\bpay(ment)?\b/i, /\bmoney\b.*\bmove\b/i]
+  },
+  {
+    strategyKey: "augusta-calendar-rate-planning",
+    patterns: [/\baugusta\b.*\bcalendar\b/i, /\b14 days?\b.*\bcalendar\b/i, /\bfair rental\b.*\brate\b/i, /\bcomparable\b.*\brate\b/i]
+  },
+  {
+    strategyKey: "home-office-monthly-cadence",
+    patterns: [/\bhome office\b.*\bmonthly\b/i, /\bmonthly\b.*\breimburse/i, /\breimbursement\b.*\bcadence\b/i]
+  },
+  {
+    strategyKey: "mixed-purpose-travel",
+    patterns: [/\bmixed[- ]purpose\b.*\btravel\b/i, /\btravel\b.*\bfamily\b/i, /\bvacation\b.*\bbusiness\b/i, /\btrip memo\b/i, /\bbusiness retreat\b/i]
+  },
+  {
+    strategyKey: "retirement-tax-buckets",
+    patterns: [/\bretirement\b.*\bbucket/i, /\bwithdraw(al)?\b.*\bretirement\b/i, /\btax buckets?\b/i, /\brule of 55\b/i, /\binherited ira\b/i]
+  },
+  {
+    strategyKey: "roth-conversion-review",
+    patterns: [/\broth\b/i, /\bbackdoor\b.*\broth\b/i, /\bconversion\b/i, /\bfive[- ]year\b.*\bclock\b/i]
+  },
+  {
+    strategyKey: "inheritance-basis-planning",
+    patterns: [/\binherit(ance|ed)?\b/i, /\bbasis\b/i, /\bestate\b.*\bplanning\b/i, /\bownership\b.*\bchange\b/i]
+  },
+  {
+    strategyKey: "health-insurance-before-medicare",
+    patterns: [/\bhealth insurance\b/i, /\bmedicare\b/i, /\bmarketplace\b/i, /\bgroup insurance\b/i]
+  },
+  {
+    strategyKey: "medical-expense-paths",
+    patterns: [/\bmedical expense(s)?\b/i, /\bhsa\b/i, /\bitemized\b.*\bmedical\b/i, /\bover[- ]the[- ]counter\b/i]
+  },
+  {
+    strategyKey: "ministerial-housing-allowance",
+    patterns: [/\bministerial\b/i, /\bhousing allowance\b/i, /\bchurch\b.*\bhousing\b/i]
+  },
+  {
+    strategyKey: "business-owner-tax-mindset",
+    patterns: [/\btax mindset\b/i, /\bbusiness owner\b.*\btax(es)?\b/i, /\bemployee\b.*\bbusiness owner\b/i, /\bestimated\b.*\bself[- ]employment\b/i]
+  },
+  {
+    strategyKey: "tax-plan-vault-roadmap",
+    patterns: [/\bpersonalized tax plan\b/i, /\bvault\b/i, /\bwhich lesson\b/i, /\bwhere should i start\b/i]
+  },
+  {
     strategyKey: "hire-kids",
     patterns: [/\bhir(e|ing)\b.*\b(kid|kids|child|children)\b/i, /\b(kid|kids|child|children)\b.*\bpayroll\b/i]
   },
