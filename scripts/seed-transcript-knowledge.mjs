@@ -17,6 +17,7 @@ const TRANSCRIPT_ROOT = "/Users/elijahbowie/[Shona Bell] Wiki/Transcriptions";
 const OUTPUT_DIR = ".transcript-knowledge-runs";
 const REVIEW_OWNER = "Codex transcript knowledge expansion";
 const SEED_BATCH = "transcript-derived-preview-2026-05-28-v1";
+const FRESHNESS_REVIEW_DATE = "2026-05-29";
 const REQUIRED_ENV = ["CLOUDFLARE_API_TOKEN", "ADMIN_MASTER_PASSWORD"];
 const TENANT_ID = "tenant_beyond_freedom";
 const ADMIN_AUTH_PATH = "/api/auth/admin-password";
@@ -25,6 +26,93 @@ const ADMIN_HEALTH_PATH = "/api/admin/health/run";
 const HEADERS_JSON = { "content-type": "application/json" };
 const PREVIEW_BANNER =
   "Transcript-derived Beyond Freedom education. Not personalized tax, legal, payroll, or state-law advice. Ask Shona/Jay before acting.";
+const STALE_SEGMENT_PATTERNS = [
+  /\b2024\b/,
+  /\b2025\b/,
+  /\b67 cents?\b/i,
+  /\b70 cents?\b/i,
+  /\b1\.22 million\b/i,
+  /\b40%\b/,
+  /\b15,000\b/,
+  /\b15k\b/i,
+  /\$\s?\d/,
+  /\b\d{1,3},\d{3}\b/,
+  /\bJanuary 31th\b/i
+];
+
+const official2026Sources = [
+  ["IRS 2026 inflation adjustments", "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill"],
+  ["IRS 2026 standard mileage rates", "https://www.irs.gov/newsroom/irs-sets-2026-business-standard-mileage-rate-at-725-cents-per-mile-up-25-cents"],
+  ["IRS Publication 946 depreciation updates", "https://www.irs.gov/publications/p946"],
+  ["IRS Publication 560 retirement plan limits", "https://www.irs.gov/publications/p560"],
+  ["IRS QBI deduction page", "https://www.irs.gov/newsroom/qualified-business-income-deduction"]
+];
+
+const freshnessNotes = {
+  "hire-kids": [
+    "Do not rely on transcript references to a 2025 child standard deduction amount. For tax year 2026, the regular single standard deduction is $16,100, and dependent-child wage treatment still requires current-year review of earned income, dependency, payroll, and entity facts.",
+    "W-2 and payroll filing deadlines should be checked against the applicable payroll calendar before implementation."
+  ],
+  "vehicle-mileage": [
+    "Replace any transcript reference to the 2024 67-cent mileage rate or a 2025 rate. Beginning January 1, 2026, the IRS business standard mileage rate is 72.5 cents per mile.",
+    "Clients may use standard mileage or actual costs only when the method is allowed for their facts; business-use logs remain mandatory."
+  ],
+  depreciation: [
+    "Do not rely on transcript references to 2025 Section 179 or 40% bonus-depreciation examples without review.",
+    "For tax years beginning in 2026, IRS Publication 946 lists a $2,560,000 maximum Section 179 deduction, phase-out after $4,090,000 of qualifying property, and a $32,000 SUV Section 179 cap.",
+    "Publication 946 also says 100% special depreciation allowance was reinstated for certain qualified property acquired and placed in service after January 19, 2025, with election-out and eligibility rules."
+  ],
+  "cost-segregation": [
+    "Cost segregation conclusions should be coordinated with 2026 depreciation law, passive activity limits, short-term rental or real estate professional facts, and the property's placed-in-service history.",
+    "Do not quote stale bonus-depreciation percentages from older transcript examples without advisor review."
+  ],
+  "short-term-rental": [
+    "Short-term rental loss treatment still depends on average-stay, services, material participation, passive activity, depreciation, and entity facts. A 2026 label does not prove losses are currently deductible.",
+    "Escalate before applying cost segregation or depreciation-driven STR loss planning."
+  ],
+  "real-estate-professional": [
+    "Real estate professional status remains fact-heavy. Require current-year time logs, other employment facts, property activity records, and material participation support before suggesting qualification.",
+    "Do not let office-hours examples substitute for a 2026 qualification review."
+  ],
+  "llc-to-s-corp": [
+    "S-corp conversion analysis must use current-year payroll, reasonable compensation, state fees, filing status, and election timing. Transcript examples are not a filing recommendation.",
+    "Escalate before filing Form 2553 or changing owner pay/distribution patterns."
+  ],
+  "late-s-corp-election": [
+    "Late S-corp election relief depends on current IRS procedures, effective dates, shareholder consent, reasonable cause, prior returns, and payroll facts.",
+    "Escalate before filing Form 2553 or relying on a transcript example about a prior-year election."
+  ],
+  "medical-reimbursement": [
+    "Medical and health reimbursement strategies require current plan-document, entity, owner-status, spouse-coverage, payroll, and reimbursement-path review.",
+    "Do not treat transcript examples as a current 2026 plan setup."
+  ],
+  meals: [
+    "Meal deduction percentages and entertainment-related restrictions should be verified for the current tax year before advising.",
+    "Receipts alone are not enough; retain attendees, amount, date, place, and business-purpose notes."
+  ],
+  travel: [
+    "Travel guidance should be applied with 2026 substantiation rules and mixed-purpose trip review.",
+    "Escalate international, family, conference, and personal-days questions before deduction treatment is suggested."
+  ],
+  "home-office": [
+    "Home office reimbursement examples mentioning prior-year worksheets are planning examples, not automatic 2026 deduction amounts.",
+    "Use current-year expense records, square footage, accountable-plan procedures, and entity facts before implementation."
+  ],
+  "entity-protection": [
+    "Entity and asset-protection discussion is not legal advice. Use current state law, operating documents, ownership facts, tax election records, payroll, and insurance review before action."
+  ],
+  "augusta-rule": [
+    "Augusta Rule planning must be reviewed under current-year rental-day tracking, fair-rental support, business purpose, lease/payment records, entity facts, and state/local issues.",
+    "Do not let transcript examples replace current comparable-rate support."
+  ],
+  "community-walkthrough": [
+    "Portal navigation content is not tax guidance. Use the strategy pages and escalation path for current-year tax decisions."
+  ],
+  "office-hours-faq": [
+    "Office-hours examples may involve prior filing years. Treat them as question patterns and teaching examples, not as 2026 conclusions.",
+    "Escalate any answer that requires a 2026 limit, deadline, form, filing position, or eligibility conclusion."
+  ]
+};
 
 const strategies = [
   strategy("Hiring Your Kids", "hire-kids", ["Hiring Your Kids Strategy"], ["kid", "child", "children", "payroll", "reasonable", "wage"], {
@@ -343,7 +431,7 @@ function selectSegments(transcripts, definition, { sourceType, limit }) {
     .filter((transcript) => (sourceType === "office" ? transcript.isOfficeHours : !transcript.isOfficeHours))
     .flatMap((transcript) => transcript.segments)
     .map((segment) => ({ ...segment, score: scoreText(segment.text, definition.keywords) }))
-    .filter((segment) => segment.score > 0)
+    .filter((segment) => segment.score > 0 && !isStaleSegment(segment.text))
     .sort((left, right) => right.score - left.score)
     .filter((segment) => {
       const key = segment.text.toLowerCase().slice(0, 120);
@@ -352,6 +440,10 @@ function selectSegments(transcripts, definition, { sourceType, limit }) {
       return true;
     })
     .slice(0, limit);
+}
+
+function isStaleSegment(text) {
+  return STALE_SEGMENT_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 function bulletList(items) {
@@ -371,6 +463,24 @@ function sourceList(transcripts) {
   return transcripts
     .map((transcript) => `- ${transcript.relativePath}${transcript.duration ? ` (${transcript.duration})` : ""}`)
     .join("\n");
+}
+
+function freshnessReview(definition) {
+  const notes = freshnessNotes[definition.strategyKey] ?? [
+    "Apply current-year federal, state, payroll, legal, and entity rules before treating transcript content as implementation guidance."
+  ];
+  const sources = official2026Sources.map(([label, url]) => `- [${label}](${url})`).join("\n");
+  return `## 2026 Freshness Review
+
+**Reviewed for 2026 preview:** ${FRESHNESS_REVIEW_DATE}  
+**Freshness rule:** If a transcript excerpt mentions 2024 or 2025 amounts, rates, forms, or deadlines, treat that excerpt as historical context only. Use current official sources and Shona/Jay review before client action.
+
+${bulletList(notes)}
+
+**Official 2026 reference set used for this freshness pass:**
+
+${sources}
+`;
 }
 
 function buildStrategyMarkdown(definition, trainingTranscript, trainingSegments, officeSegments) {
@@ -393,6 +503,8 @@ function buildStrategyMarkdown(definition, trainingTranscript, trainingSegments,
 ## Overview
 
 ${definition.overview}
+
+${freshnessReview(definition)}
 
 ## Who This Applies To
 
@@ -486,6 +598,8 @@ function buildOfficeIndexMarkdown(transcripts, synthesizedPages) {
 ## Overview
 
 The office-hours recordings are best used as a living FAQ layer. They show where clients get stuck, which strategies need clearer documentation, and which questions should be routed to Shona/Jay instead of answered generally.
+
+${freshnessReview({ strategyKey: "office-hours-faq" })}
 
 ## Strategy Pages Updated From Office Hours
 
@@ -600,7 +714,10 @@ async function deleteR2Object(key) {
 
 async function deleteVectors(vectorIds) {
   if (vectorIds.length === 0) return;
-  await execWrangler(["vectorize", "delete-vectors", PRODUCTION_VECTOR_INDEX, "--env", "production", "--ids", ...vectorIds]);
+  for (let index = 0; index < vectorIds.length; index += 100) {
+    const batch = vectorIds.slice(index, index + 100);
+    await execWrangler(["vectorize", "delete-vectors", PRODUCTION_VECTOR_INDEX, "--env", "production", "--ids", ...batch]);
+  }
 }
 
 async function portalFetch(pathname, options = {}, cookieJar = null) {
