@@ -22,6 +22,7 @@ worker-configuration.d.ts
 # Seed/run artifacts with production object identifiers
 .seed-preview-knowledge/
 .transcript-knowledge-runs/
+.official-lessons-runs/
 raw/
 
 # Proprietary client training media and generated transcripts

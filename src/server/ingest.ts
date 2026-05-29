@@ -332,7 +332,12 @@ function chunkText(text: string): string[] {
 }
 
 function summarize(text: string): string {
-  const plain = text.replace(/^#+\s+/gm, "").replace(/\s+/g, " ").trim();
+  const plain = text
+    .replace(/^# .+\n*/, "")
+    .replace(/^## .+$/gm, "")
+    .replace(/^#+\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return plain.slice(0, 260);
 }
 

@@ -991,6 +991,9 @@ async function dryRun() {
 
 async function apply(args) {
   assertRequiredEnvironment("apply");
+  if (process.env.ALLOW_TRANSCRIPT_SCAFFOLD_SEED !== "YES") {
+    throw new Error("This transcript scaffold seed is retired for client-facing publishing. Use the official lesson workflow instead.");
+  }
   await ensureOutputDir();
   const transcripts = await loadTranscripts();
   const synthesizedPages = buildSynthesizedPages(transcripts);

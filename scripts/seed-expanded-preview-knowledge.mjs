@@ -792,6 +792,9 @@ async function dryRun() {
 
 async function apply(args) {
   assertRequiredEnvironment("apply");
+  if (process.env.ALLOW_SCAFFOLD_SEEDS !== "YES") {
+    throw new Error("This public-source preview seed is retired for client-facing publishing. Set ALLOW_SCAFFOLD_SEEDS=YES only for an intentional internal recovery run.");
+  }
   await ensureOutputDir();
   const preflightResult = await preflight({ dryRun: false });
   if ((preflightResult.existingSources.length > 0 || preflightResult.existingPages.length > 0) && !args.force) {
@@ -895,7 +898,10 @@ async function rollback(manifestPath = null) {
   }
   const vectorIds = manifest.sources.flatMap((source) => source.chunks.map((chunk) => chunk.vectorId).filter(Boolean));
   if (vectorIds.length > 0) {
-    await execWrangler(["vectorize", "delete-vectors", PRODUCTION_VECTOR_INDEX, "--env", "production", "--ids", ...vectorIds]);
+    for (let index = 0; index < vectorIds.length; index += 100) {
+      const batch = vectorIds.slice(index, index + 100);
+      await execWrangler(["vectorize", "delete-vectors", PRODUCTION_VECTOR_INDEX, "--env", "production", "--ids", ...batch]);
+    }
   }
   const chunkIds = manifest.sources.flatMap((source) => source.chunks.map((chunk) => chunk.id).filter(Boolean));
   if (chunkIds.length > 0) await d1Run(`DELETE FROM knowledge_chunks WHERE id IN (${quoted(chunkIds)})`);

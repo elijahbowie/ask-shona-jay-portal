@@ -758,7 +758,10 @@ async function deleteVectors(vectorIds) {
   if (vectorIds.length === 0) {
     return;
   }
-  await execWrangler(["vectorize", "delete-vectors", PRODUCTION_VECTOR_INDEX, "--env", "production", "--ids", ...vectorIds]);
+  for (let index = 0; index < vectorIds.length; index += 100) {
+    const batch = vectorIds.slice(index, index + 100);
+    await execWrangler(["vectorize", "delete-vectors", PRODUCTION_VECTOR_INDEX, "--env", "production", "--ids", ...batch]);
+  }
 }
 
 async function portalFetch(pathname, options = {}, cookieJar = null) {
@@ -1029,6 +1032,9 @@ async function dryRun() {
 
 async function apply(args) {
   assertRequiredEnvironment("apply");
+  if (process.env.ALLOW_SCAFFOLD_SEEDS !== "YES") {
+    throw new Error("This public-source preview seed is retired for client-facing publishing. Set ALLOW_SCAFFOLD_SEEDS=YES only for an intentional internal recovery run.");
+  }
   await ensureOutputDir();
   const preflightResult = await preflight({ dryRun: false });
   if ((preflightResult.existingSources.length > 0 || preflightResult.existingPages.length > 0) && !args.force) {

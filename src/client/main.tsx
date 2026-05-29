@@ -766,7 +766,7 @@ function AnswerThread({
         <div className="answer-panel empty-answer stack-card">
           <MagnifyingGlass size={32} weight="light" />
           <h2>Source-backed answers appear here.</h2>
-          <p>Ask a question and the portal will show citations, trainings, next steps, and review status.</p>
+          <p>Ask a question and the portal will show citations, relevant lessons, next steps, and when to bring the team in.</p>
         </div>
       </div>
     );
@@ -814,7 +814,7 @@ function AnswerCard({
           {answer.escalationRequired ? <WarningCircle size={16} /> : <CheckCircle size={16} />}
           {readableState(answer.state)}
         </div>
-        <span className="freshness-badge">Sources reviewed {freshnessLabel(answer.sourceDates)}</span>
+        <span className="freshness-badge">Beyond Freedom curriculum</span>
       </div>
       <div className="question-bubble">{entry.question}</div>
       <button className="review-cta" onClick={onEscalate}>
@@ -826,7 +826,7 @@ function AnswerCard({
       </div>
       <div className="answer-trust-bar">
         <ShieldCheck size={18} weight="light" />
-        <span>Sources reviewed by Beyond Freedom Financial. Educational only until Shona/Jay confirm your facts.</span>
+        <span>Built from the Beyond Freedom strategy library. Bring fact-specific decisions to the team before implementation.</span>
       </div>
       <div className="impact-badge">
         <TrendUp size={18} weight="light" />
@@ -839,7 +839,7 @@ function AnswerCard({
             <article key={`${citation.sourceId}-${citation.wikiPageId}-${citation.quoteSpan}`} className="citation-card">
               <span>{citation.sourceType}</span>
               <strong>{citation.sourceTitle}</strong>
-              <p>{citation.quoteSpan}</p>
+              <p>{cleanCitationExcerpt(citation.quoteSpan)}</p>
             </article>
           ))}
         </div>
@@ -908,8 +908,8 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
     <section className="content-page">
       <div className="page-intro motion-in">
         <p className="eyebrow">Learn</p>
-        <h1>Published guidance without the scavenger hunt.</h1>
-        <p>Search preview education by strategy, situation, or repeated client question. Every page shows sources and review limits.</p>
+        <h1>Beyond Freedom strategy library.</h1>
+        <p>Search official strategy lessons, implementation steps, checklists, and client action plans.</p>
       </div>
       {continueReading ? (
         <button className="continue-card motion-in" onClick={() => navigate(`/learn/${continueReading.slug}`)}>
@@ -1016,9 +1016,6 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
         <h1>{page.title}</h1>
         <p>{page.summary}</p>
       </section>
-      <div className="preview-banner">
-        Federal public-source education. Not personalized tax, legal, payroll, or state-law advice. Ask Shona/Jay before acting.
-      </div>
       <div className="reader-body" dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(page.markdown || page.summary) }} />
       {related.length ? (
         <section className="related-pages">
@@ -1497,15 +1494,6 @@ function nextDeadline(): { label: string; days: number } {
   };
 }
 
-function freshnessLabel(dates: string[]): string {
-  if (!dates.length) {
-    return "recently";
-  }
-  const parsed = dates.map((date) => new Date(date)).filter((date) => !Number.isNaN(date.getTime()));
-  const latest = parsed.sort((a, b) => b.getTime() - a.getTime())[0];
-  return latest ? latest.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "recently";
-}
-
 function impactCopy(answer: ChatAnswer): string {
   if (answer.state === "answered_with_citations") {
     return "Businesses like yours often lose savings when documentation waits until year-end.";
@@ -1514,6 +1502,13 @@ function impactCopy(answer: ChatAnswer): string {
     return "A quick review now can prevent a wrong filing, payroll, or entity decision later.";
   }
   return "Use this as a fact-gathering step before Shona/Jay make a recommendation.";
+}
+
+function cleanCitationExcerpt(input: string): string {
+  return input
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function followUpPrompts(question: string, answer: ChatAnswer): string[] {
