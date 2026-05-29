@@ -293,6 +293,7 @@ export async function retrieveChunks(env: Env, client: ClientProfile, question: 
     ...allowedTiers
   );
   const questionTerms = tokenize(question);
+  const explicitStrategyKeys = matchingStrategyKeys(question);
   const clientTerms = new Set([...client.tags.map(normalizeTerm), normalizeTerm(client.entityType), normalizeTerm(client.lifecycleStage)]);
 
   return rows
@@ -314,12 +315,21 @@ export async function retrieveChunks(env: Env, client: ClientProfile, question: 
       };
     })
     .filter((item) => item.score > 0.2 && item.relevantToQuestion)
+    .filter((item) => explicitStrategyKeys.size === 0 || explicitStrategyKeys.has(item.row.strategy_key))
     .sort((left, right) => right.score - left.score)
     .slice(0, 6);
 }
 
 function strategyMatchesQuestion(strategyKey: string, question: string): boolean {
   return STRATEGY_QUERY_PATTERNS.some((item) => item.strategyKey === strategyKey && item.patterns.some((pattern) => pattern.test(question)));
+}
+
+function matchingStrategyKeys(question: string): Set<string> {
+  return new Set(
+    STRATEGY_QUERY_PATTERNS
+      .filter((item) => item.patterns.some((pattern) => pattern.test(question)))
+      .map((item) => item.strategyKey)
+  );
 }
 
 function tokenize(input: string): string[] {

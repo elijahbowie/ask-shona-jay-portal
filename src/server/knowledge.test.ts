@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { redactSensitive } from "./knowledge";
+import { redactSensitive, retrieveChunks } from "./knowledge";
 import { allowedVisibilityTiers, queryVectorScores, upsertPublishedWikiVectors } from "./vector";
 import type { ClientProfile } from "../shared/types";
 
@@ -42,6 +42,62 @@ describe("queryVectorScores", () => {
     expect(scores.size).toBe(0);
   });
 });
+
+describe("retrieveChunks", () => {
+  it("keeps clear strategy questions scoped to the matched strategy", async () => {
+    const rows = [
+      chunk("chunk_minister", "ministerial-housing-allowance", "Ministerial housing allowance setup checklist and fair rental value support."),
+      chunk("chunk_kids", "hire-kids", "Hiring kids setup checklist and payroll support.")
+    ];
+    const env = {
+      DB: {
+        prepare: () => ({
+          bind: () => ({
+            all: async () => ({ results: rows })
+          })
+        })
+      }
+    } as unknown as Env;
+    const client = {
+      tier: "mid",
+      tags: [],
+      entityType: "unknown",
+      lifecycleStage: "active",
+      hasChildren: true
+    } as unknown as ClientProfile;
+
+    const retrieved = await retrieveChunks(env, client, "What exactly do I need to set up for ministerial housing allowance?");
+
+    expect(retrieved.map((item) => item.row.strategy_key)).toEqual(["ministerial-housing-allowance"]);
+  });
+});
+
+function chunk(id: string, strategyKey: string, text: string) {
+  return {
+    id,
+    tenant_id: "tenant_beyond_freedom",
+    wiki_page_id: `wiki_${strategyKey}`,
+    source_id: `src_${strategyKey}`,
+    vector_id: `vector_${id}`,
+    text,
+    citation_json: JSON.stringify({
+      sourceId: `src_${strategyKey}`,
+      wikiPageId: `wiki_${strategyKey}`,
+      sourceTitle: strategyKey,
+      sourceType: "training",
+      quoteSpan: text,
+      clientVisibleUrl: `/learn/${strategyKey}`
+    }),
+    published: 1,
+    visibility: "client",
+    visibility_tier: "all",
+    source_type: "training",
+    strategy_key: strategyKey,
+    effective_year: "2026",
+    requires_review: 0,
+    content_version: "v1"
+  };
+}
 
 describe("upsertPublishedWikiVectors", () => {
   it("keeps publication usable when Vectorize upsert is unavailable locally", async () => {
