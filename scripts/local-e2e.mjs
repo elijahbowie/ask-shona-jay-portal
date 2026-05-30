@@ -129,7 +129,9 @@ async function run() {
 
   const trainings = await api("/api/trainings");
   assert(trainings.trainings?.length > 0, "training vault returned no trainings");
-  const trainingSlug = answer.recommendedTrainings[0].url.replace("/trainings/", "");
+  // Recommendation URLs may be /learn/<slug> or /trainings/<slug>; the API is
+  // keyed by the bare slug, so take the last path segment either way.
+  const trainingSlug = answer.recommendedTrainings[0].url.split("/").filter(Boolean).pop();
   const training = await api(`/api/trainings/${trainingSlug}`);
   assert(training.page?.title, "recommended training did not load");
 
