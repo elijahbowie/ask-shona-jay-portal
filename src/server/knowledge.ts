@@ -1,6 +1,6 @@
 import type { ChatAnswer, Citation, ClientProfile, DownloadAsset, TrainingRecommendation, WikiPage } from "../shared/types";
 import { createId, nowIso, sha256 } from "./crypto";
-import { all, first, mapAsset, mapWiki, run, tenantId } from "./db";
+import { all, first, mapAsset, mapWiki, recordAuditEvent, run, tenantId } from "./db";
 import { allowedVisibilityTiers, queryVectorScores } from "./vector";
 import { recommendationForStrategy } from "./personalization";
 
@@ -313,6 +313,11 @@ const CLARIFY_PATTERNS = [
   /\bexactly\b/i
 ];
 
+// Implementation-intent detection, shared by strategyMatchBoost and
+// preferredStrategyKeys. Stateless (no `g` flag) so a single instance is safe.
+const IMPLEMENTATION_QUERY_TERMS = /\b(kit|packet|checklist|worksheet|memo|intake|closeout|file structure|30[- ]day)\b/i;
+const IMPLEMENTATION_PAGE_KEY = /\b(kit|packet|checklist|worksheet)\b/;
+
 export async function answerQuestion(env: Env, client: ClientProfile, question: string): Promise<ChatAnswer> {
   const cleanQuestion = question.trim();
   const retrieved = await retrieveChunks(env, client, cleanQuestion);
@@ -427,9 +432,8 @@ function strategyMatchBoost(strategyKey: string, question: string): number {
   if (!strategyMatchesQuestion(strategyKey, question)) {
     return 0;
   }
-  const implementationTerms = /\b(kit|packet|checklist|worksheet|memo|intake|closeout|file structure|30[- ]day)\b/i;
-  const isImplementationPage = /\b(kit|packet|checklist|worksheet)\b/.test(strategyKey);
-  return implementationTerms.test(question) && isImplementationPage ? 10 : 6;
+  const isImplementationPage = IMPLEMENTATION_PAGE_KEY.test(strategyKey);
+  return IMPLEMENTATION_QUERY_TERMS.test(question) && isImplementationPage ? 10 : 6;
 }
 
 function matchingStrategyKeys(question: string): Set<string> {
@@ -441,13 +445,12 @@ function matchingStrategyKeys(question: string): Set<string> {
 }
 
 function preferredStrategyKeys(question: string): Set<string> {
-  const implementationTerms = /\b(kit|packet|checklist|worksheet|memo|intake|closeout|file structure|30[- ]day)\b/i;
-  if (!implementationTerms.test(question)) {
+  if (!IMPLEMENTATION_QUERY_TERMS.test(question)) {
     return new Set();
   }
   return new Set(
     Array.from(matchingStrategyKeys(question))
-      .filter((strategyKey) => /\b(kit|packet|checklist|worksheet)\b/.test(strategyKey))
+      .filter((strategyKey) => IMPLEMENTATION_PAGE_KEY.test(strategyKey))
   );
 }
 
@@ -591,7 +594,17 @@ async function generateGroundedAnswer(
       return null;
     }
     return { answer: response, modelId: "workers-ai/llama-3.1-8b-source-grounded" };
-  } catch {
+  } catch (error) {
+    // Unexpected AI exception (not a normal decline, which returns null above).
+    // Fall through to the deterministic extractor, but leave a trail so a
+    // persistent AI-tier outage isn't invisible. Signal write is best-effort.
+    await recordAuditEvent(env, {
+      actor: "system",
+      action: "ai.fallback",
+      targetType: "system",
+      targetId: "workers_ai",
+      metadata: { model: "@cf/meta/llama-3.1-8b-instruct-fp8", error: error instanceof Error ? error.message : String(error) }
+    }).catch(() => {});
     return null;
   }
 }
@@ -632,7 +645,14 @@ async function generateViaAiGateway(
       return null;
     }
     return { answer, modelId: `ai-gateway/${model}` };
-  } catch {
+  } catch (error) {
+    await recordAuditEvent(env, {
+      actor: "system",
+      action: "ai.fallback",
+      targetType: "system",
+      targetId: "ai_gateway",
+      metadata: { model, error: error instanceof Error ? error.message : String(error) }
+    }).catch(() => {});
     return null;
   }
 }
@@ -667,6 +687,19 @@ function dedupeCitations(citations: Citation[]): Citation[] {
 async function buildTrainingRecommendations(env: Env, client: ClientProfile, chunks: RetrievedChunk[]): Promise<TrainingRecommendation[]> {
   const allowedTiers = allowedVisibilityTiers(client.tier);
   const tierPlaceholders = allowedTiers.map(() => "?").join(", ");
+  // Recommendations are best-effort: a query failure degrades to "no recommendations"
+  // rather than failing the answer. But signal it (no logger in this app) so a real
+  // outage or a column-rename migration doesn't silently empty Learn/Plan for everyone.
+  const onQueryFailure = (source: string) => async (error: unknown): Promise<any[]> => {
+    await recordAuditEvent(env, {
+      actor: client.id,
+      action: "recommendations.query_failed",
+      targetType: "system",
+      targetId: source,
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    }).catch(() => {});
+    return [];
+  };
   const [pageRows, assetRows] = await Promise.all([
     all<any>(
       env,
@@ -676,7 +709,7 @@ async function buildTrainingRecommendations(env: Env, client: ClientProfile, chu
          AND visibility_tier IN (${tierPlaceholders})`,
       tenantId(),
       ...allowedTiers
-    ).catch(() => []),
+    ).catch(onQueryFailure("wiki_pages")),
     all<any>(
       env,
       `SELECT * FROM download_assets
@@ -684,7 +717,7 @@ async function buildTrainingRecommendations(env: Env, client: ClientProfile, chu
          AND visibility_tier IN (${tierPlaceholders})`,
       tenantId(),
       ...allowedTiers
-    ).catch(() => [])
+    ).catch(onQueryFailure("download_assets"))
   ]);
   const pages = pageRows.map((row) => mapWiki(row)) as WikiPage[];
   const assets = assetRows.map((row) => mapAsset(row)) as DownloadAsset[];
@@ -702,6 +735,22 @@ async function buildTrainingRecommendations(env: Env, client: ClientProfile, chu
   }
   return Array.from(recommendations.values()).slice(0, 3);
 }
+
+// Topic-specific next-step prompts, matched in order against the question. The
+// patterns are stateless (no `g` flag), so the shared table is safe to reuse.
+const NEXT_STEP_RULES: Array<{ pattern: RegExp; step: string }> = [
+  { pattern: /kid|child|children/i, step: "Prepare the job description, time records, pay rate support, and payroll path before hiring a child." },
+  { pattern: /augusta|home|rent/i, step: "Prepare the business purpose, agenda, minutes, invoice, payment record, and comparable rental-rate support." },
+  { pattern: /estimate|quarter|deadline/i, step: "Review year-to-date profit and book a review before the payment deadline if income changed." },
+  { pattern: /contractor|worker|classification|1099/i, step: "Complete the worker classification checklist before paying or onboarding the worker." },
+  { pattern: /mileage|vehicle|car/i, step: "Start a contemporaneous mileage log with date, destination, business purpose, and miles." },
+  { pattern: /year[- ]end|closeout|december/i, step: "Use the year-end closeout checklist to gather books, payroll, deductions, entity updates, and open advisor questions." },
+  { pattern: /meal/i, step: "Keep the receipt, attendees, business purpose, and notes showing how the meal relates to the business." },
+  { pattern: /travel|trip|flight|hotel|lodging/i, step: "Save the itinerary, receipts, calendar purpose, and notes separating business and personal time." },
+  { pattern: /s.?corp|2553|election|distribution/i, step: "Ask the team to review entity status, payroll, reasonable compensation, and election timing before acting." },
+  { pattern: /real estate professional|short[- ]term rental|material participation|cost seg/i, step: "Gather hours, activity logs, property details, and depreciation records before requesting strategy review." },
+  { pattern: /medical|health reimbursement/i, step: "Confirm entity type, plan setup, payment path, and reimbursement documentation with the team first." }
+];
 
 function buildNextSteps(
   question: string,
@@ -728,38 +777,10 @@ function buildNextSteps(
         "Compare the example facts to your own situation.",
         "Keep documentation before implementing the strategy."
       ];
-  if (/kid|child|children/i.test(question)) {
-    base.push("Prepare the job description, time records, pay rate support, and payroll path before hiring a child.");
-  }
-  if (/augusta|home|rent/i.test(question)) {
-    base.push("Prepare the business purpose, agenda, minutes, invoice, payment record, and comparable rental-rate support.");
-  }
-  if (/estimate|quarter|deadline/i.test(question)) {
-    base.push("Review year-to-date profit and book a review before the payment deadline if income changed.");
-  }
-  if (/contractor|worker|classification|1099/i.test(question)) {
-    base.push("Complete the worker classification checklist before paying or onboarding the worker.");
-  }
-  if (/mileage|vehicle|car/i.test(question)) {
-    base.push("Start a contemporaneous mileage log with date, destination, business purpose, and miles.");
-  }
-  if (/year[- ]end|closeout|december/i.test(question)) {
-    base.push("Use the year-end closeout checklist to gather books, payroll, deductions, entity updates, and open advisor questions.");
-  }
-  if (/meal/i.test(question)) {
-    base.push("Keep the receipt, attendees, business purpose, and notes showing how the meal relates to the business.");
-  }
-  if (/travel|trip|flight|hotel|lodging/i.test(question)) {
-    base.push("Save the itinerary, receipts, calendar purpose, and notes separating business and personal time.");
-  }
-  if (/s.?corp|2553|election|distribution/i.test(question)) {
-    base.push("Ask the team to review entity status, payroll, reasonable compensation, and election timing before acting.");
-  }
-  if (/real estate professional|short[- ]term rental|material participation|cost seg/i.test(question)) {
-    base.push("Gather hours, activity logs, property details, and depreciation records before requesting strategy review.");
-  }
-  if (/medical|health reimbursement/i.test(question)) {
-    base.push("Confirm entity type, plan setup, payment path, and reimbursement documentation with the team first.");
+  for (const rule of NEXT_STEP_RULES) {
+    if (rule.pattern.test(question)) {
+      base.push(rule.step);
+    }
   }
   if (risk !== "general_education") {
     base.push("Escalate this question for CPA review before acting.");
@@ -805,18 +826,14 @@ export async function createEscalation(
     now,
     now
   );
-  await run(
-    env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
-    input.clientId,
-    "escalation.create",
-    "escalation",
-    id,
-    JSON.stringify({ conversationId: input.conversationId ?? null, reason: input.reason }),
-    now
-  );
+  await recordAuditEvent(env, {
+    actor: input.clientId,
+    action: "escalation.create",
+    targetType: "escalation",
+    targetId: id,
+    metadata: { conversationId: input.conversationId ?? null, reason: input.reason },
+    at: now
+  });
   return id;
 }
 

@@ -1,6 +1,5 @@
 import type { ClientProfile } from "../shared/types";
-import { all, run, tenantId } from "./db";
-import { createId, nowIso } from "./crypto";
+import { all, recordAuditEvent, tenantId, type AuditAction } from "./db";
 
 interface VectorChunkRow {
   id: string;
@@ -126,17 +125,12 @@ async function embedTexts(env: Env, texts: string[]): Promise<number[][] | null>
   }
 }
 
-async function recordVectorAudit(env: Env, actor: string, wikiId: string, action: string, detail: string): Promise<void> {
-  await run(
-    env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
+async function recordVectorAudit(env: Env, actor: string, wikiId: string, action: AuditAction, detail: string): Promise<void> {
+  await recordAuditEvent(env, {
     actor,
     action,
-    "wiki_page",
-    wikiId,
-    JSON.stringify({ detail }),
-    nowIso()
-  );
+    targetType: "wiki_page",
+    targetId: wikiId,
+    metadata: { detail }
+  });
 }

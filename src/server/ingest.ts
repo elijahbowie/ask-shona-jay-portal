@@ -1,5 +1,5 @@
 import { createId, nowIso, sha256 } from "./crypto";
-import { first, run, tenantId } from "./db";
+import { first, recordAuditEvent, run, tenantId } from "./db";
 import type { SourceType } from "../shared/types";
 import { upsertPublishedWikiVectors } from "./vector";
 
@@ -166,18 +166,14 @@ export async function processSource(env: Env, sourceId: string, actor: string): 
   }
 
   await run(env, "UPDATE source_documents SET status = ?, normalized_r2_key = ?, updated_at = ? WHERE id = ?", "draft_ready", normalizedKey, now, sourceId);
-  await run(
-    env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
+  await recordAuditEvent(env, {
     actor,
-    "source.ingest",
-    "source",
-    sourceId,
-    JSON.stringify({ wikiId }),
-    now
-  );
+    action: "source.ingest",
+    targetType: "source",
+    targetId: sourceId,
+    metadata: { wikiId },
+    at: now
+  });
   return wikiId;
 }
 
@@ -200,18 +196,14 @@ export async function publishWikiPage(env: Env, wikiId: string, actor: string): 
   await run(env, "UPDATE knowledge_chunks SET published = 1 WHERE wiki_page_id = ? AND tenant_id = ?", wikiId, tenantId());
   await upsertPublishedWikiVectors(env, wikiId, actor);
   await run(env, "UPDATE source_documents SET status = ?, updated_at = ? WHERE id = ?", "published", now, page.source_id);
-  await run(
-    env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
+  await recordAuditEvent(env, {
     actor,
-    "wiki.publish",
-    "wiki_page",
-    wikiId,
-    JSON.stringify({ sourceId: page.source_id }),
-    now
-  );
+    action: "wiki.publish",
+    targetType: "wiki_page",
+    targetId: wikiId,
+    metadata: { sourceId: page.source_id },
+    at: now
+  });
 }
 
 export async function updateWikiPage(env: Env, wikiId: string, markdown: string, actor: string): Promise<void> {
@@ -232,18 +224,13 @@ export async function updateWikiPage(env: Env, wikiId: string, markdown: string,
     nowIso(),
     wikiId
   );
-  await run(
-    env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
+  await recordAuditEvent(env, {
     actor,
-    "wiki.edit",
-    "wiki_page",
-    wikiId,
-    JSON.stringify({ contentHash: hash }),
-    nowIso()
-  );
+    action: "wiki.edit",
+    targetType: "wiki_page",
+    targetId: wikiId,
+    metadata: { contentHash: hash }
+  });
 }
 
 async function markSourceFailed(env: Env, sourceId: string, message: string): Promise<void> {

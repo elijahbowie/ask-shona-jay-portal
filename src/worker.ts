@@ -9,7 +9,7 @@ import {
   setSessionCookie,
   verifyLoginCode
 } from "./server/auth";
-import { all, first, mapEscalation, mapHealth, mapSource, mapWiki, run, seedIfNeeded, tenantId } from "./server/db";
+import { all, first, mapEscalation, mapHealth, mapSource, mapWiki, recordAuditEvent, run, seedIfNeeded, tenantId } from "./server/db";
 import { createEscalation, answerQuestion, getTrainingBySlug } from "./server/knowledge";
 import { applyGhlWebhook, createGhlContact, sendGhlEscalation, verifyGhlWebhook } from "./server/ghl";
 import { createSource, processSource, publishWikiPage, updateWikiPage } from "./server/ingest";
@@ -46,7 +46,7 @@ app.use("*", async (c, next) => {
   c.header("X-Content-Type-Options", "nosniff");
   c.header("Referrer-Policy", "strict-origin-when-cross-origin");
   c.header("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
-  c.header("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https://images.unsplash.com https://picsum.photos; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'");
+  c.header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'");
 });
 
 app.get("/api/health", (c) =>
@@ -65,18 +65,13 @@ app.post("/api/auth/request-code", async (c) => {
   }
   const { code, expiresAt } = await requestLoginCode(c.env, email);
   await sendLoginCodeEmail(c.env, { email, code, expiresAt });
-  await run(
-    c.env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
-    email,
-    "auth.request_code",
-    "auth_code",
-    email,
-    JSON.stringify({ expiresAt }),
-    nowIso()
-  );
+  await recordAuditEvent(c.env, {
+    actor: email,
+    action: "auth.request_code",
+    targetType: "auth_code",
+    targetId: email,
+    metadata: { expiresAt }
+  });
   const response: Record<string, unknown> = { ok: true, expiresAt };
   if (c.env.ENVIRONMENT === "development") {
     response.devCode = code;
@@ -111,18 +106,13 @@ app.post("/api/auth/admin-password", async (c) => {
   if (!session) {
     return c.json({ error: "Invalid master password." }, 401);
   }
-  await run(
-    c.env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
-    session.adminEmail || "master-password",
-    "auth.admin_password",
-    "session",
-    session.sessionId,
-    JSON.stringify({ method: "master_password" }),
-    nowIso()
-  );
+  await recordAuditEvent(c.env, {
+    actor: session.adminEmail || "master-password",
+    action: "auth.admin_password",
+    targetType: "session",
+    targetId: session.sessionId,
+    metadata: { method: "master_password" }
+  });
   setSessionCookie(c, session.sessionId);
   return c.json({
     authenticated: true,
@@ -283,6 +273,10 @@ app.get("/api/plan", async (c) => {
         strategyKey: "estimated-tax-system",
         slug: "estimated-tax-payment-system"
       }];
+  // Read saved completion state. Keep the try around ONLY the read — never the
+  // response build — and on failure report progress as unknown (nothing done)
+  // rather than fabricating defaults that would erase a client's real checkmarks.
+  let progress: Map<string, boolean> | null = new Map();
   try {
     const progressRows = await all<{ title: string; done: number }>(
       c.env,
@@ -290,16 +284,28 @@ app.get("/api/plan", async (c) => {
       tenantId(),
       session.client.id
     );
-    const progress = new Map(progressRows.map((row) => [row.title, Boolean(row.done)]));
-    return c.json({
-      items: items.map((item, index) => ({
-        ...item,
-        done: progress.has(item.title) ? Boolean(progress.get(item.title)) : index === 0
-      }))
+    progress = new Map(progressRows.map((row) => [row.title, Boolean(row.done)]));
+  } catch (error) {
+    progress = null;
+    await recordAuditEvent(c.env, {
+      actor: session.client.id,
+      action: "plan.progress_read_failed",
+      targetType: "client_profile",
+      targetId: session.client.id,
+      metadata: { error: error instanceof Error ? error.message : String(error) }
     });
-  } catch {
-    return c.json({ items: items.map((item, index) => ({ ...item, done: index === 0 })) });
   }
+  return c.json({
+    items: items.map((item, index) => ({
+      ...item,
+      done:
+        progress === null
+          ? false // read failed: report no known progress, never fabricate
+          : progress.has(item.title)
+            ? Boolean(progress.get(item.title))
+            : index === 0 // first item is seeded done for a fresh checklist
+    }))
+  });
 });
 
 app.patch("/api/plan/items", async (c) => {
@@ -436,18 +442,13 @@ app.post("/api/admin/contacts", async (c) => {
     ghlContactId: contact.contactId,
     tier
   });
-  await run(
-    c.env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
-    admin.adminEmail || "admin",
-    contact.created ? "admin.contact_create" : "admin.contact_sync",
-    "client_profile",
-    email,
-    JSON.stringify({ ghlContactId: contact.contactId, tier }),
-    nowIso()
-  );
+  await recordAuditEvent(c.env, {
+    actor: admin.adminEmail || "admin",
+    action: contact.created ? "admin.contact_create" : "admin.contact_sync",
+    targetType: "client_profile",
+    targetId: email,
+    metadata: { ghlContactId: contact.contactId, tier }
+  });
 
   return c.json({ ok: true, email, contactId: contact.contactId, created: contact.created });
 });
@@ -567,19 +568,44 @@ export default {
   async queue(batch: MessageBatch<any>, env: Env): Promise<void> {
     await seedIfNeeded(env);
     for (const message of batch.messages) {
+      const body = message.body || {};
+      // Terminal: a message with neither handle can never succeed. Ack it (so it
+      // stops looping toward the dead-letter queue) but leave an audit trail.
+      if (!body.sourceId && !body.escalationId) {
+        await recordAuditEvent(env, {
+          actor: "queue",
+          action: "queue.process_failed",
+          targetType: "system",
+          targetId: "ingest_queue",
+          metadata: { reason: "malformed message: no sourceId or escalationId", keys: Object.keys(body) }
+        }).catch(() => {});
+        message.ack();
+        continue;
+      }
       try {
-        if (message.body?.sourceId) {
-          await processSource(env, message.body.sourceId, message.body.actor || "queue");
+        if (body.sourceId) {
+          await processSource(env, body.sourceId, body.actor || "queue");
         }
-        if (message.body?.escalationId) {
+        if (body.escalationId) {
           await sendGhlEscalation(env, {
-            clientEmail: message.body.clientEmail,
-            summary: message.body.summary,
-            portalUrl: message.body.portalUrl
+            clientEmail: body.clientEmail,
+            summary: body.summary,
+            portalUrl: body.portalUrl
           });
         }
         message.ack();
-      } catch {
+      } catch (error) {
+        // Can't reliably tell transient from terminal here, so retry — but record
+        // every failure (the app has no logger) so a poison message that exhausts
+        // its retries and dead-letters leaves a trail of why. The signal write is
+        // guarded so it can never itself break message handling.
+        await recordAuditEvent(env, {
+          actor: "queue",
+          action: "queue.process_failed",
+          targetType: body.escalationId ? "escalation" : "source",
+          targetId: body.escalationId || body.sourceId || "unknown",
+          metadata: { keys: Object.keys(body), error: error instanceof Error ? error.message : String(error) }
+        }).catch(() => {});
         message.retry();
       }
     }
