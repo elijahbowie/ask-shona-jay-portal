@@ -126,7 +126,7 @@ describe("answerQuestion", () => {
     expect(answer.escalationRequired).toBe(false);
     expect(answer.citations).toHaveLength(1);
     expect(answer.recommendedTrainings[0].title).toBe("Hiring Your Kids Strategy Training");
-    expect(answer.nextSteps).toContain("Confirm duties, pay reasonableness, hours, and payroll handling before hiring a child.");
+    expect(answer.nextSteps).toContain("Prepare the job description, time records, pay rate support, and payroll path before hiring a child.");
     expect(inserts.some((item) => item.sql.includes("INSERT INTO conversations"))).toBe(true);
   });
 

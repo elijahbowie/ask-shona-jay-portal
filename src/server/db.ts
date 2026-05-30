@@ -1,6 +1,7 @@
 import type {
   ClientProfile,
   Escalation,
+  DownloadAsset,
   HealthFinding,
   SourceDocument,
   SourceType,
@@ -252,6 +253,24 @@ export function mapWiki(row: any, markdown?: string): WikiPage {
     approvedBy: row.approved_by,
     approvedAt: row.approved_at,
     publishedAt: row.published_at,
+    updatedAt: row.updated_at
+  };
+}
+
+export function mapAsset(row: any): DownloadAsset {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    filename: row.filename,
+    mimeType: row.mime_type,
+    strategyKey: row.strategy_key,
+    linkedSlug: row.linked_slug,
+    status: row.status,
+    visibilityTier: row.visibility_tier,
+    sortOrder: Number(row.sort_order ?? 0),
+    downloadUrl: `/api/assets/${encodeURIComponent(row.id)}/download`,
+    createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }

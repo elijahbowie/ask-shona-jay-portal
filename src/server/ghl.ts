@@ -1,5 +1,6 @@
 import { createId, nowIso, sha256, timingSafeEqualText } from "./crypto";
 import { first, run, tenantId } from "./db";
+import { ALLOWED_GHL_TAGS } from "./personalization";
 
 interface GhlContactPayload {
   id?: string;
@@ -73,9 +74,7 @@ export async function applyGhlWebhook(env: Env, payload: GhlContactPayload & { e
   if (!email) {
     return;
   }
-  const allowedTags = (payload.tags || []).filter((tag) =>
-    ["hire-kids", "augusta-rule", "estimated-taxes", "mid", "high", "low"].includes(tag)
-  );
+  const allowedTags = normalizeGhlTags(payload.tags || []);
   const tier = allowedTags.includes("high") ? "high" : allowedTags.includes("low") ? "low" : "mid";
   const now = nowIso();
   const existing = await first<any>(env, "SELECT id FROM client_profiles WHERE tenant_id = ? AND email = ? LIMIT 1", tenantId(), email);
@@ -83,12 +82,13 @@ export async function applyGhlWebhook(env: Env, payload: GhlContactPayload & { e
   if (existing) {
     await run(
       env,
-      "UPDATE client_profiles SET name = ?, ghl_contact_id = ?, tier = ?, lifecycle_stage = ?, tags_json = ?, updated_at = ? WHERE id = ?",
+      "UPDATE client_profiles SET name = ?, ghl_contact_id = ?, tier = ?, lifecycle_stage = ?, tags_json = ?, has_children = ?, updated_at = ? WHERE id = ?",
       name,
       payload.contactId || payload.id || null,
       tier,
       payload.lifecycleStage || "active",
       JSON.stringify(allowedTags),
+      allowedTags.includes("hire-kids") || allowedTags.includes("has-kids") ? 1 : 0,
       now,
       existing.id
     );
@@ -108,12 +108,41 @@ export async function applyGhlWebhook(env: Env, payload: GhlContactPayload & { e
       "unknown",
       payload.lifecycleStage || "active",
       JSON.stringify(allowedTags),
-      allowedTags.includes("hire-kids") ? 1 : 0,
+      allowedTags.includes("hire-kids") || allowedTags.includes("has-kids") ? 1 : 0,
       "active",
       now,
       now
     );
   }
+}
+
+function normalizeGhlTags(tags: string[]): string[] {
+  const aliases: Record<string, string> = {
+    kids: "has-kids",
+    children: "has-kids",
+    "has kids": "has-kids",
+    "s corp": "s-corp",
+    "s-corp": "s-corp",
+    scorp: "s-corp",
+    "short-term-rental": "str",
+    "short term rental": "str",
+    "real estate professional": "real-estate",
+    retirement: "retirement-planning",
+    "irs notice": "irs-notice",
+    "home office": "home-office",
+    "worker classification": "worker-classification",
+    "entity protection": "entity-protection"
+  };
+  const allowed = new Set(ALLOWED_GHL_TAGS);
+  const output = new Set<string>();
+  for (const tag of tags) {
+    const normalized = tag.trim().toLowerCase();
+    const canonical = aliases[normalized] || normalized.replace(/\s+/g, "-");
+    if (allowed.has(canonical)) {
+      output.add(canonical);
+    }
+  }
+  return Array.from(output);
 }
 
 export async function findGhlContactIdByEmail(env: Env, email: string): Promise<string | null> {

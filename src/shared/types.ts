@@ -60,6 +60,22 @@ export interface WikiPage {
   updatedAt: string;
 }
 
+export interface DownloadAsset {
+  id: string;
+  title: string;
+  description: string;
+  filename: string;
+  mimeType: string;
+  strategyKey: string;
+  linkedSlug: string;
+  status: string;
+  visibilityTier: string;
+  sortOrder: number;
+  downloadUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Citation {
   sourceId: string;
   sourceTitle: string;
@@ -76,6 +92,8 @@ export interface TrainingRecommendation {
   strategyKey: string;
   reason: string;
   url: string;
+  assetTitle?: string;
+  assetUrl?: string;
 }
 
 export interface ChatAnswer {
@@ -113,6 +131,35 @@ export interface HealthFinding {
   createdAt: string;
 }
 
+export interface PlanItem {
+  title: string;
+  done: boolean;
+  reason: string;
+  strategyKey: string;
+  slug?: string;
+  assetTitle?: string;
+  assetUrl?: string;
+}
+
+export interface AdminReviewItem {
+  id: string;
+  label: string;
+  detail: string;
+  severity: "low" | "medium" | "high";
+  category: string;
+  targetUrl?: string;
+  count?: number;
+  createdAt?: string;
+}
+
+export interface AdminReviewData {
+  unansweredQuestions: AdminReviewItem[];
+  lowConfidenceAnswers: AdminReviewItem[];
+  repeatedConfusion: AdminReviewItem[];
+  contentGaps: AdminReviewItem[];
+  pagesNeedingReview: AdminReviewItem[];
+}
+
 export interface AppMe {
   authenticated: boolean;
   role: Role | null;
@@ -125,11 +172,16 @@ export interface DashboardData {
   wikiPages: WikiPage[];
   healthFindings: HealthFinding[];
   escalations: Escalation[];
+  review: AdminReviewData;
   metrics: {
     publishedPages: number;
     draftPages: number;
     openEscalations: number;
     healthFindings: number;
     conversations: number;
+    unansweredQuestions: number;
+    lowConfidenceAnswers: number;
+    repeatedConfusion: number;
+    pagesNeedingReview: number;
   };
 }

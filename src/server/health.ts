@@ -41,6 +41,57 @@ export async function runHealthChecks(env: Env): Promise<number> {
     }
   }
 
+  const lowConfidence = await all<any>(
+    env,
+    `SELECT question, COUNT(*) AS total, MAX(created_at) AS last_seen
+     FROM conversations
+     WHERE tenant_id = ? AND confidence < 0.46
+     GROUP BY question HAVING total >= 1`,
+    tenantId()
+  );
+  for (const item of lowConfidence) {
+    if (await createFinding(env, "medium", "low_confidence_answer", `Low confidence answer: ${item.question}`, `One or more answers were below confidence threshold. Count: ${item.total}.`, item.question)) {
+      created += 1;
+    }
+  }
+
+  const repeatedQuestions = await all<any>(
+    env,
+    `SELECT LOWER(TRIM(question)) AS question, COUNT(*) AS total
+     FROM conversations
+     WHERE tenant_id = ?
+     GROUP BY LOWER(TRIM(question)) HAVING total >= 2`,
+    tenantId()
+  );
+  for (const item of repeatedQuestions) {
+    if (await createFinding(env, "medium", "repeated_question", `Repeated client question: ${item.question}`, `Clients asked this question repeatedly. Count: ${item.total}.`, item.question)) {
+      created += 1;
+    }
+  }
+
+  const missingAssets = await all<any>(
+    env,
+    `SELECT w.id, w.title, w.slug, w.strategy_key
+     FROM wiki_pages w
+     LEFT JOIN download_assets a ON a.tenant_id = w.tenant_id
+       AND a.linked_slug = w.slug
+       AND a.status = 'published'
+     WHERE w.tenant_id = ? AND w.status = 'published'
+     GROUP BY w.id
+     HAVING (
+       w.strategy_key LIKE '%kit%' OR
+       w.strategy_key LIKE '%packet%' OR
+       w.strategy_key LIKE '%worksheet%' OR
+       w.strategy_key LIKE '%checklist%'
+     ) AND COUNT(a.id) = 0`,
+    tenantId()
+  );
+  for (const page of missingAssets) {
+    if (await createFinding(env, "medium", "missing_download_asset", `Missing download asset: ${page.title}`, "Implementation pages should have a downloadable worksheet, checklist, or packet attached.", page.slug)) {
+      created += 1;
+    }
+  }
+
   await run(
     env,
     "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

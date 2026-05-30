@@ -1,7 +1,8 @@
-import type { ChatAnswer, Citation, ClientProfile, TrainingRecommendation } from "../shared/types";
+import type { ChatAnswer, Citation, ClientProfile, DownloadAsset, TrainingRecommendation, WikiPage } from "../shared/types";
 import { createId, nowIso, sha256 } from "./crypto";
-import { all, first, run, tenantId } from "./db";
+import { all, first, mapAsset, mapWiki, run, tenantId } from "./db";
 import { allowedVisibilityTiers, queryVectorScores } from "./vector";
+import { recommendationForStrategy } from "./personalization";
 
 interface ChunkRow {
   id: string;
@@ -184,7 +185,7 @@ const STRATEGY_QUERY_PATTERNS: Array<{ strategyKey: string; patterns: RegExp[] }
   },
   {
     strategyKey: "vehicle-mileage-actual-expense-kit",
-    patterns: [/\bmileage\b.*\b(actual|standard|kit|log)\b/i, /\bvehicle\b.*\bexpense\b.*\bkit\b/i]
+    patterns: [/\bmileage\b.*\b(actual|standard|kit|log)\b/i, /\b(track|tracking)\b.*\bmileage\b/i, /\bvehicle\b.*\bexpense\b.*\bkit\b/i]
   },
   {
     strategyKey: "business-travel-trip-memo-kit",
@@ -318,9 +319,9 @@ export async function answerQuestion(env: Env, client: ClientProfile, question: 
   const risk = classifyRisk(cleanQuestion, retrieved);
   const citations = dedupeCitations(retrieved.map((item) => item.citation)).slice(0, 5);
   const confidence = computeConfidence(retrieved, risk);
-  const recommendedTrainings = buildTrainingRecommendations(retrieved);
+  const recommendedTrainings = await buildTrainingRecommendations(env, client, retrieved);
   const sourceDates = Array.from(new Set(retrieved.map((item) => item.row.effective_year)));
-  const nextSteps = buildNextSteps(cleanQuestion, retrieved, risk);
+  const nextSteps = buildNextSteps(cleanQuestion, retrieved, risk, recommendedTrainings);
   const escalationRequired = risk !== "general_education" || confidence < 0.46 || citations.length === 0;
   const state = citations.length === 0
     ? "cannot_answer_from_approved_sources"
@@ -663,21 +664,51 @@ function dedupeCitations(citations: Citation[]): Citation[] {
   return output;
 }
 
-function buildTrainingRecommendations(chunks: RetrievedChunk[]): TrainingRecommendation[] {
+async function buildTrainingRecommendations(env: Env, client: ClientProfile, chunks: RetrievedChunk[]): Promise<TrainingRecommendation[]> {
+  const allowedTiers = allowedVisibilityTiers(client.tier);
+  const tierPlaceholders = allowedTiers.map(() => "?").join(", ");
+  const [pageRows, assetRows] = await Promise.all([
+    all<any>(
+      env,
+      `SELECT * FROM wiki_pages
+       WHERE tenant_id = ? AND status = 'published'
+         AND visibility IN ('client', 'public')
+         AND visibility_tier IN (${tierPlaceholders})`,
+      tenantId(),
+      ...allowedTiers
+    ).catch(() => []),
+    all<any>(
+      env,
+      `SELECT * FROM download_assets
+       WHERE tenant_id = ? AND status = 'published'
+         AND visibility_tier IN (${tierPlaceholders})`,
+      tenantId(),
+      ...allowedTiers
+    ).catch(() => [])
+  ]);
+  const pages = pageRows.map((row) => mapWiki(row)) as WikiPage[];
+  const assets = assetRows.map((row) => mapAsset(row)) as DownloadAsset[];
   const recommendations = new Map<string, TrainingRecommendation>();
   for (const item of chunks) {
-    const title = item.citation.sourceTitle;
-    recommendations.set(item.row.strategy_key, {
-      title,
+    const canonical = recommendationForStrategy(item.row.strategy_key, pages, assets);
+    const fallback = {
+      title: item.citation.sourceTitle,
       strategyKey: item.row.strategy_key,
       reason: `This source directly supports the ${item.row.strategy_key.replace(/-/g, " ")} guidance.`,
       url: item.citation.clientVisibleUrl
-    });
+    };
+    const recommendation = canonical || fallback;
+    recommendations.set(recommendation.url, recommendation);
   }
   return Array.from(recommendations.values()).slice(0, 3);
 }
 
-function buildNextSteps(question: string, chunks: RetrievedChunk[], risk: string): string[] {
+function buildNextSteps(
+  question: string,
+  chunks: RetrievedChunk[],
+  risk: string,
+  recommendations: TrainingRecommendation[]
+): string[] {
   if (chunks.length === 0) {
     return [
       "Ask the team to answer this directly.",
@@ -685,19 +716,35 @@ function buildNextSteps(question: string, chunks: RetrievedChunk[], risk: string
       "Avoid relying on general tax information until the team reviews your facts."
     ];
   }
-  const base = [
-    "Open the cited training or wiki page.",
-    "Compare the example facts to your own situation.",
-    "Keep documentation before implementing the strategy."
-  ];
+  const primary = recommendations[0];
+  const base = primary
+    ? [
+        `Open ${primary.title}.`,
+        primary.assetTitle ? `Download ${primary.assetTitle}.` : "Use the checklist or records list in the lesson before gathering documents.",
+        "Compare the lesson examples to your own situation before implementing anything."
+      ]
+    : [
+        "Open the cited training or wiki page.",
+        "Compare the example facts to your own situation.",
+        "Keep documentation before implementing the strategy."
+      ];
   if (/kid|child|children/i.test(question)) {
-    base.push("Confirm duties, pay reasonableness, hours, and payroll handling before hiring a child.");
+    base.push("Prepare the job description, time records, pay rate support, and payroll path before hiring a child.");
   }
   if (/augusta|home|rent/i.test(question)) {
-    base.push("Document business purpose, agenda, notes, and comparable rental rates.");
+    base.push("Prepare the business purpose, agenda, minutes, invoice, payment record, and comparable rental-rate support.");
   }
   if (/estimate|quarter|deadline/i.test(question)) {
     base.push("Review year-to-date profit and book a review before the payment deadline if income changed.");
+  }
+  if (/contractor|worker|classification|1099/i.test(question)) {
+    base.push("Complete the worker classification checklist before paying or onboarding the worker.");
+  }
+  if (/mileage|vehicle|car/i.test(question)) {
+    base.push("Start a contemporaneous mileage log with date, destination, business purpose, and miles.");
+  }
+  if (/year[- ]end|closeout|december/i.test(question)) {
+    base.push("Use the year-end closeout checklist to gather books, payroll, deductions, entity updates, and open advisor questions.");
   }
   if (/meal/i.test(question)) {
     base.push("Keep the receipt, attendees, business purpose, and notes showing how the meal relates to the business.");

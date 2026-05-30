@@ -50,9 +50,9 @@ describe("runHealthChecks", () => {
     const firstRun = await runHealthChecks(env);
     const secondRun = await runHealthChecks(env);
 
-    expect(firstRun).toBe(3);
+    expect(firstRun).toBe(5);
     expect(secondRun).toBe(0);
-    expect(findings.size).toBe(3);
+    expect(findings.size).toBe(5);
     expect(auditRuns).toHaveLength(2);
   });
 });

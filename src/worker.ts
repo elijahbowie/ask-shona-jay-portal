@@ -15,10 +15,13 @@ import { applyGhlWebhook, createGhlContact, sendGhlEscalation, verifyGhlWebhook 
 import { createSource, processSource, publishWikiPage, updateWikiPage } from "./server/ingest";
 import { runHealthChecks } from "./server/health";
 import { createId, nowIso } from "./server/crypto";
-import type { ClientProfile } from "./shared/types";
+import type { ClientProfile, WikiPage } from "./shared/types";
 import { sendLoginCodeEmail } from "./server/email";
 import { allowedVisibilityTiers } from "./server/vector";
 import { notifyGhlEscalation } from "./server/escalations";
+import { assetForDownload, assetsForSlug, contentDisposition, publishedAssets } from "./server/assets";
+import { buildAdminReview } from "./server/review";
+import { recommendPagesForClient } from "./server/personalization";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -225,45 +228,61 @@ app.get("/api/trainings", async (c) => {
     tenantId(),
     ...allowedTiers
   );
-  return c.json({ trainings: rows.map((row) => mapWiki(row)) });
+  const trainings = rows.map((row) => mapWiki(row));
+  const assets = await publishedAssets(c.env, session.client.tier);
+  return c.json({ trainings, recommended: recommendPagesForClient(session.client, trainings, assets) });
 });
 
 app.get("/api/trainings/:slug", async (c) => {
-  await requireClient(c);
-  const training = await getTrainingBySlug(c.env, c.req.param("slug"));
+  const session = await requireClient(c);
+  const slug = c.req.param("slug");
+  const training = await getTrainingBySlug(c.env, slug);
   if (!training) {
     return c.json({ error: "Training not found." }, 404);
   }
-  return c.json({ page: mapWiki(training.page, training.markdown) });
+  const assets = await assetsForSlug(c.env, slug, session.client.tier);
+  return c.json({ page: mapWiki(training.page, training.markdown), assets });
+});
+
+app.get("/api/assets/:id/download", async (c) => {
+  const session = await requireClient(c);
+  const asset = await assetForDownload(c.env, c.req.param("id"), session.client.tier);
+  if (!asset) {
+    return c.json({ error: "Download not found." }, 404);
+  }
+  const object = await c.env.CONTENT_BUCKET.get(asset.r2_key);
+  if (!object?.body) {
+    return c.json({ error: "Download file is missing." }, 404);
+  }
+  return new Response(object.body, {
+    headers: {
+      "Content-Type": asset.mime_type,
+      "Content-Disposition": contentDisposition(asset.filename),
+      "Cache-Control": "private, max-age=300",
+      "X-Content-Type-Options": "nosniff"
+    }
+  });
 });
 
 app.get("/api/plan", async (c) => {
   const session = await requireClient(c);
-  const tags = new Set(session.client.tags);
-  const items = [
-    {
-      title: "Estimated tax readiness",
-      done: false,
-      reason: "Review profit and withholding before the next quarterly payment.",
-      strategyKey: "estimated-taxes"
-    }
-  ];
-  if (session.client.hasChildren || tags.has("hire-kids")) {
-    items.push({
-      title: "Hiring kids documentation",
-      done: false,
-      reason: "Confirm age-appropriate work, reasonable pay, hours, and payroll requirements.",
-      strategyKey: "hire-kids"
-    });
-  }
-  if (tags.has("augusta-rule")) {
-    items.push({
-      title: "Augusta Rule support file",
-      done: false,
-      reason: "Prepare agenda, meeting notes, business purpose, and comparable rental support.",
-      strategyKey: "augusta-rule"
-    });
-  }
+  const rows = await all<any>(
+    c.env,
+    "SELECT * FROM wiki_pages WHERE tenant_id = ? AND status = 'published' ORDER BY published_at DESC, title ASC",
+    tenantId()
+  );
+  const pages = rows.map((row) => mapWiki(row)) as WikiPage[];
+  const assets = await publishedAssets(c.env, session.client.tier);
+  const recommended = recommendPagesForClient(session.client, pages, assets);
+  const items = recommended.length
+    ? recommended
+    : [{
+        title: "Estimated Tax Payment System",
+        done: false,
+        reason: "Review profit and withholding before the next quarterly payment.",
+        strategyKey: "estimated-tax-system",
+        slug: "estimated-tax-payment-system"
+      }];
   try {
     const progressRows = await all<{ title: string; done: number }>(
       c.env,
@@ -315,24 +334,30 @@ app.patch("/api/plan/items", async (c) => {
 
 app.get("/api/admin/dashboard", async (c) => {
   await requireAdmin(c);
-  const [sources, wikiPages, healthFindings, escalations, conversationCount] = await Promise.all([
+  const [sources, wikiPages, healthFindings, escalations, conversationCount, review] = await Promise.all([
     all<any>(c.env, "SELECT * FROM source_documents WHERE tenant_id = ? ORDER BY updated_at DESC", tenantId()),
     all<any>(c.env, "SELECT * FROM wiki_pages WHERE tenant_id = ? ORDER BY updated_at DESC", tenantId()),
     all<any>(c.env, "SELECT * FROM health_findings WHERE tenant_id = ? AND status = 'open' ORDER BY created_at DESC", tenantId()),
     all<any>(c.env, "SELECT * FROM escalations WHERE tenant_id = ? ORDER BY created_at DESC", tenantId()),
-    first<{ total: number }>(c.env, "SELECT COUNT(*) AS total FROM conversations WHERE tenant_id = ?", tenantId())
+    first<{ total: number }>(c.env, "SELECT COUNT(*) AS total FROM conversations WHERE tenant_id = ?", tenantId()),
+    buildAdminReview(c.env)
   ]);
   return c.json({
     sources: sources.map(mapSource),
     wikiPages: wikiPages.map((row) => mapWiki(row)),
     healthFindings: healthFindings.map(mapHealth),
     escalations: escalations.map(mapEscalation),
+    review,
     metrics: {
       publishedPages: wikiPages.filter((page) => page.status === "published").length,
       draftPages: wikiPages.filter((page) => page.status !== "published").length,
       openEscalations: escalations.filter((item) => item.status === "open").length,
       healthFindings: healthFindings.length,
-      conversations: conversationCount?.total ?? 0
+      conversations: conversationCount?.total ?? 0,
+      unansweredQuestions: review.unansweredQuestions.length,
+      lowConfidenceAnswers: review.lowConfidenceAnswers.length,
+      repeatedConfusion: review.repeatedConfusion.length,
+      pagesNeedingReview: review.pagesNeedingReview.length
     }
   });
 });

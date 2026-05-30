@@ -909,7 +909,8 @@ select:focus {
 }
 
 .citation-card,
-.training-row button,
+.recommendation-card,
+.recommendation-card button,
 .timeline-list article,
 .learn-card {
   border: 1px solid var(--warm-line);
@@ -952,16 +953,39 @@ select:focus {
 }
 
 .check-list li,
-.training-row button {
+.recommendation-card button,
+.recommendation-card a,
+.recommended-card button,
+.recommended-card a,
+.download-grid a,
+.plan-links a {
   display: flex;
   align-items: flex-start;
   gap: 0.58rem;
   color: var(--charcoal);
 }
 
-.training-row button {
+.recommendation-card {
+  display: grid;
+  gap: 0.58rem;
+}
+
+.recommendation-card button {
   border: 1px solid var(--warm-line);
   text-align: left;
+}
+
+.recommendation-card a,
+.recommended-card a,
+.plan-links a {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.48rem 0.72rem;
+  color: var(--cobalt);
+  background: #f6f9ff;
+  font-size: 0.82rem;
+  font-weight: 820;
+  text-decoration: none;
 }
 
 .answer-actions button {
@@ -1046,6 +1070,49 @@ select:focus {
 .recent-searches {
   align-items: center;
   margin: 1rem 0;
+}
+
+.recommended-band {
+  display: grid;
+  gap: 1rem;
+  margin: 1.2rem 0;
+  padding: 1rem;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px var(--warm-line), var(--shadow-tight);
+}
+
+.recommended-band h2 {
+  margin: 0.28rem 0 0;
+}
+
+.recommended-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.recommended-card {
+  display: grid;
+  gap: 0.62rem;
+  padding: 1rem;
+  border: 1px solid var(--warm-line);
+  border-radius: 16px;
+  background: var(--warm-panel);
+}
+
+.recommended-card button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font-weight: 850;
+}
+
+.recommended-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .learn-grid {
@@ -1167,6 +1234,46 @@ select:focus {
   border-radius: 18px;
   background: #ffffff;
   box-shadow: inset 0 0 0 1px var(--warm-line), var(--shadow-tight);
+}
+
+.downloads-panel {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: #fff8d6;
+  box-shadow: inset 0 0 0 1px rgba(179, 143, 0, 0.2), var(--shadow-tight);
+}
+
+.downloads-panel h2 {
+  margin: 0.28rem 0 0;
+}
+
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.download-grid a {
+  min-height: 4.6rem;
+  border: 1px solid rgba(179, 143, 0, 0.22);
+  border-radius: 14px;
+  padding: 0.85rem;
+  background: #ffffff;
+  text-decoration: none;
+}
+
+.download-grid strong,
+.download-grid small {
+  display: block;
+}
+
+.download-grid small {
+  margin-top: 0.24rem;
+  color: var(--muted);
+  line-height: 1.35;
 }
 
 .reader-body > h1:first-child {
@@ -1294,6 +1401,13 @@ select:focus {
   line-height: 1.5;
 }
 
+.plan-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.78rem;
+}
+
 .completion-card {
   margin-top: 1rem;
   color: #18482a;
@@ -1388,6 +1502,102 @@ select:focus {
 
 .metric-panel span {
   color: var(--muted);
+}
+
+.review-overview {
+  align-items: stretch;
+}
+
+.review-overview .admin-form {
+  align-content: center;
+}
+
+.review-overview .admin-form h2,
+.review-overview .admin-form p {
+  margin: 0;
+}
+
+.review-dashboard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.review-group {
+  display: grid;
+  gap: 0.78rem;
+  padding: 1rem;
+}
+
+.review-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.review-group-heading h2 {
+  margin: 0;
+}
+
+.review-group-heading span {
+  display: grid;
+  place-items: center;
+  min-width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  color: var(--charcoal);
+  background: var(--gold);
+  font-weight: 900;
+}
+
+.review-items {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.review-item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border: 1px solid var(--warm-line);
+  border-left-width: 4px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.review-item.severity-high {
+  border-left-color: var(--danger);
+}
+
+.review-item.severity-medium {
+  border-left-color: var(--gold-dark);
+}
+
+.review-item.severity-low {
+  border-left-color: var(--mint);
+}
+
+.review-item span {
+  color: var(--gold-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-size: 0.68rem;
+  font-weight: 840;
+}
+
+.review-item p,
+.empty-review {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.review-item a {
+  width: fit-content;
+  color: var(--cobalt);
+  font-weight: 820;
 }
 
 .table-shell {
@@ -1495,6 +1705,9 @@ select:focus {
   .profile-grid,
   .wiki-review-list,
   .learn-grid,
+  .recommended-grid,
+  .download-grid,
+  .review-dashboard,
   .quick-actions {
     grid-template-columns: 1fr;
   }

@@ -8,6 +8,7 @@ import {
   Clock,
   ClockCounterClockwise,
   Database,
+  DownloadSimple,
   FileText,
   Gauge,
   Heartbeat,
@@ -30,19 +31,12 @@ import DOMPurify from "dompurify";
 import { marked } from "marked";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import type { AppMe, ChatAnswer, DashboardData, WikiPage } from "../shared/types";
+import type { AppMe, ChatAnswer, DashboardData, DownloadAsset, PlanItem, TrainingRecommendation, WikiPage } from "../shared/types";
 import "./styles.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 type ApiError = { error: string };
-
-type PlanItem = {
-  title: string;
-  done: boolean;
-  reason: string;
-  strategyKey: string;
-};
 
 type ConversationEntry = {
   id: string;
@@ -226,7 +220,7 @@ function LoginScreen({ onLogin }: { onLogin: (me: AppMe) => void }) {
         body: JSON.stringify({ email, code, remember })
       });
       onLogin(result);
-      window.history.replaceState({}, "", result.role === "admin" ? "/admin/sources" : "/ask");
+      window.history.replaceState({}, "", result.role === "admin" ? "/admin/review" : "/ask");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to verify code.");
     } finally {
@@ -244,7 +238,7 @@ function LoginScreen({ onLogin }: { onLogin: (me: AppMe) => void }) {
         body: JSON.stringify({ password: adminPassword })
       });
       onLogin(result);
-      window.history.replaceState({}, "", "/admin/sources");
+      window.history.replaceState({}, "", "/admin/review");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to enter admin preview.");
     } finally {
@@ -344,6 +338,7 @@ function TopNav({
     ["/more", "More", <UserCircle size={17} weight="light" />]
   ] as const;
   const adminItems = [
+    ["/admin/review", "Review", <Gauge size={17} weight="light" />],
     ["/admin/sources", "Sources", <UploadSimple size={17} weight="light" />],
     ["/admin/wiki", "Wiki", <FileText size={17} weight="light" />],
     ["/admin/questions", "Questions", <PaperPlaneTilt size={17} weight="light" />],
@@ -354,7 +349,7 @@ function TopNav({
 
   return (
     <nav className="top-nav motion-in" aria-label="Primary">
-      <button className="wordmark" onClick={() => navigate(me.role === "admin" ? "/admin/sources" : "/ask")}>
+      <button className="wordmark" onClick={() => navigate(me.role === "admin" ? "/admin/review" : "/ask")}>
         <span className="wordmark-mark" aria-hidden="true">BF</span>
         <span>Ask Shona/Jay</span>
       </button>
@@ -857,10 +852,7 @@ function AnswerCard({
           <h3>Recommended Learn pages</h3>
           <div className="training-row">
             {answer.recommendedTrainings.map((training) => (
-              <button key={training.url} onClick={() => navigate(training.url.replace("/trainings", "/learn"))}>
-                <BookOpenText size={18} weight="light" />
-                <span>{training.title}</span>
-              </button>
+              <RecommendationCard key={training.url} training={training} navigate={navigate} />
             ))}
           </div>
         </section>
@@ -879,15 +871,37 @@ function AnswerCard({
   );
 }
 
+function RecommendationCard({ training, navigate }: { training: TrainingRecommendation; navigate: (path: string) => void }) {
+  const learnUrl = training.url.replace("/trainings", "/learn");
+  return (
+    <article className="recommendation-card">
+      <button onClick={() => navigate(learnUrl)}>
+        <BookOpenText size={18} weight="light" />
+        <span>{training.title}</span>
+      </button>
+      {training.assetTitle && training.assetUrl ? (
+        <a href={training.assetUrl} target="_blank" rel="noreferrer">
+          <DownloadSimple size={17} weight="light" />
+          {training.assetTitle}
+        </a>
+      ) : null}
+    </article>
+  );
+}
+
 function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
   const [items, setItems] = useState<WikiPage[]>([]);
+  const [recommended, setRecommended] = useState<PlanItem[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const recentSearches = readStorage<string[]>("learn-recent-searches", []);
   const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((item) => categoryFor(item.strategyKey))))], [items]);
 
   useEffect(() => {
-    api<{ trainings: WikiPage[] }>("/api/trainings").then((data) => setItems(data.trainings));
+    api<{ trainings: WikiPage[]; recommended: PlanItem[] }>("/api/trainings").then((data) => {
+      setItems(data.trainings);
+      setRecommended(data.recommended || []);
+    });
   }, []);
 
   useEffect(() => {
@@ -920,6 +934,31 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
           </div>
           <strong>{progressFor(continueReading.slug)}%</strong>
         </button>
+      ) : null}
+      {recommended.length ? (
+        <section className="recommended-band motion-in">
+          <div>
+            <span className="mini-label">Recommended for you</span>
+            <h2>Start with the pages and kits tied to your profile.</h2>
+          </div>
+          <div className="recommended-grid">
+            {recommended.slice(0, 4).map((item) => (
+              <article key={`${item.slug || item.title}-${item.assetUrl || ""}`} className="recommended-card">
+                <button onClick={() => item.slug && navigate(`/learn/${item.slug}`)}>
+                  <BookOpenText size={19} weight="light" />
+                  <span>{item.title}</span>
+                </button>
+                <p>{item.reason}</p>
+                {item.assetTitle && item.assetUrl ? (
+                  <a href={item.assetUrl} target="_blank" rel="noreferrer">
+                    <DownloadSimple size={17} weight="light" />
+                    {item.assetTitle}
+                  </a>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
       ) : null}
       <div className="vault-toolbar motion-in">
         <div className="search-box">
@@ -966,12 +1005,16 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
 
 function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: (path: string) => void; announce: (message: string) => void }) {
   const [page, setPage] = useState<WikiPage | null>(null);
+  const [assets, setAssets] = useState<DownloadAsset[]>([]);
   const [allPages, setAllPages] = useState<WikiPage[]>([]);
   const storageKey = `learn-progress:${slug}`;
 
   useEffect(() => {
-    api<{ page: WikiPage }>(`/api/trainings/${slug}`).then((data) => setPage(data.page));
-    api<{ trainings: WikiPage[] }>("/api/trainings").then((data) => setAllPages(data.trainings));
+    api<{ page: WikiPage; assets: DownloadAsset[] }>(`/api/trainings/${slug}`).then((data) => {
+      setPage(data.page);
+      setAssets(data.assets || []);
+    });
+    api<{ trainings: WikiPage[]; recommended: PlanItem[] }>("/api/trainings").then((data) => setAllPages(data.trainings));
   }, [slug]);
 
   useEffect(() => {
@@ -1016,6 +1059,7 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
         <h1>{page.title}</h1>
         <p>{page.summary}</p>
       </section>
+      <DownloadsSection assets={assets} />
       <div className="reader-body" dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(page.markdown || page.summary) }} />
       {related.length ? (
         <section className="related-pages">
@@ -1028,6 +1072,31 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
         </section>
       ) : null}
     </article>
+  );
+}
+
+function DownloadsSection({ assets }: { assets: DownloadAsset[] }) {
+  if (!assets.length) {
+    return null;
+  }
+  return (
+    <section className="downloads-panel motion-in" aria-label="Downloads">
+      <div>
+        <span className="mini-label">Downloads</span>
+        <h2>Use these while you work through the lesson.</h2>
+      </div>
+      <div className="download-grid">
+        {assets.map((asset) => (
+          <a key={asset.id} href={asset.downloadUrl} target="_blank" rel="noreferrer">
+            <DownloadSimple size={20} weight="light" />
+            <span>
+              <strong>{asset.title}</strong>
+              <small>{asset.description}</small>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1083,6 +1152,10 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
               <p>{item.reason}</p>
               <span>{readable(item.strategyKey)}</span>
               <small>{planCommitment(item)}</small>
+              <div className="plan-links">
+                {item.slug ? <a href={`/learn/${item.slug}`}>Open lesson</a> : null}
+                {item.assetTitle && item.assetUrl ? <a href={item.assetUrl} target="_blank" rel="noreferrer">{item.assetTitle}</a> : null}
+              </div>
             </div>
           </article>
         ))}
@@ -1164,6 +1237,9 @@ function HistoryView({ me, navigate }: { me: AppMe; navigate: (path: string) => 
 }
 
 function AdminRouter({ path }: { path: string; navigate: (path: string) => void }) {
+  if (path === "/admin/review" || path === "/admin") {
+    return <AdminReviewDashboard />;
+  }
   if (path === "/admin/wiki") {
     return <AdminWiki />;
   }
@@ -1238,6 +1314,61 @@ function AdminSources() {
         <AdminMetricPanel data={data} />
       </div>
       <AdminTable title="Recent sources" rows={data?.sources || []} columns={["title", "sourceType", "status", "strategyKey", "updatedAt"]} />
+    </section>
+  );
+}
+
+function AdminReviewDashboard() {
+  const { data, refresh } = useDashboard();
+  const runChecks = async () => {
+    await api("/api/admin/health/run", { method: "POST", body: "{}" });
+    await refresh();
+  };
+  return (
+    <section className="admin-page">
+      <AdminHeader title="Review Dashboard" subtitle="Triage client confusion, weak answers, content gaps, and pages that need an admin pass." />
+      <div className="admin-grid review-overview">
+        <AdminMetricPanel data={data} />
+        <div className="admin-form motion-in">
+          <h2>Review actions</h2>
+          <p>Run checks after publishing lessons or importing assets so missing downloads, stale pages, and answer gaps surface here.</p>
+          <button className="primary-button" onClick={runChecks}><span>Run review checks</span><span className="button-orb"><Heartbeat size={17} /></span></button>
+        </div>
+      </div>
+      {data ? (
+        <div className="review-dashboard motion-in">
+          <ReviewGroup title="Unanswered questions" items={data.review.unansweredQuestions} empty="No unanswered questions are open." />
+          <ReviewGroup title="Low-confidence answers" items={data.review.lowConfidenceAnswers} empty="No low-confidence answers are open." />
+          <ReviewGroup title="Repeated confusion" items={data.review.repeatedConfusion} empty="No repeated confusion clusters yet." />
+          <ReviewGroup title="Content gaps" items={data.review.contentGaps} empty="No open content gaps." />
+          <ReviewGroup title="Pages needing review" items={data.review.pagesNeedingReview} empty="No pages need review right now." />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ReviewGroup({ title, items, empty }: { title: string; items: DashboardData["review"]["unansweredQuestions"]; empty: string }) {
+  return (
+    <section className="review-group stack-card">
+      <div className="review-group-heading">
+        <h2>{title}</h2>
+        <span>{items.length}</span>
+      </div>
+      {items.length ? (
+        <div className="review-items">
+          {items.slice(0, 8).map((item) => (
+            <article key={item.id} className={`review-item severity-${item.severity}`}>
+              <span>{item.category}{item.count ? ` · ${item.count}` : ""}</span>
+              <strong>{item.label}</strong>
+              <p>{item.detail}</p>
+              {item.targetUrl ? <a href={item.targetUrl}>Open</a> : null}
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="empty-review">{empty}</p>
+      )}
     </section>
   );
 }
@@ -1348,6 +1479,9 @@ function AdminMetricPanel({ data }: { data: DashboardData | null }) {
       <Metric label="Open escalations" value={metrics?.openEscalations ?? 0} />
       <Metric label="Health findings" value={metrics?.healthFindings ?? 0} />
       <Metric label="Conversations" value={metrics?.conversations ?? 0} />
+      <Metric label="Unanswered" value={metrics?.unansweredQuestions ?? 0} />
+      <Metric label="Low confidence" value={metrics?.lowConfidenceAnswers ?? 0} />
+      <Metric label="Pages to review" value={metrics?.pagesNeedingReview ?? 0} />
     </div>
   );
 }

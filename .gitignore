@@ -21,6 +21,7 @@ worker-configuration.d.ts
 
 # Seed/run artifacts with production object identifiers
 .seed-preview-knowledge/
+.asset-runs/
 .transcript-knowledge-runs/
 .official-lessons-runs/
 raw/
