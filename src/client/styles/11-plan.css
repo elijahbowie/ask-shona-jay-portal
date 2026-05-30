@@ -1,0 +1,133 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Plan
+   ───────────────────────────────────────────────────────────────────────── */
+.plan-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--brand-navy-deep) 0%, #00284a 100%);
+  color: var(--ink-on-brand);
+}
+
+.plan-summary svg {
+  color: var(--brand-sky);
+}
+
+.plan-summary h2 {
+  color: var(--ink-on-brand);
+  font-size: var(--type-h2-size);
+}
+
+.plan-summary .mini-label {
+  color: var(--brand-sky);
+}
+
+.plan-summary strong {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--brand-sky);
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.plan-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  align-items: start;
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+
+.plan-item.done {
+  background: var(--surface-raised);
+}
+
+.plan-item h2 {
+  font-size: var(--type-h3-size);
+}
+
+.plan-item > div > p {
+  color: var(--ink-secondary);
+  font-size: 14px;
+  margin-top: var(--space-1);
+}
+
+.plan-item > div > span {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brand-sky-strong);
+  font-weight: 600;
+}
+
+.plan-item > div > small {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--ink-tertiary);
+}
+
+.plan-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.plan-links a {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.check-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--surface-line-strong);
+  color: var(--signal-success);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.check-button span {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+}
+
+.check-button:hover {
+  border-color: var(--brand-sky);
+  transform: scale(1.08);
+}
+
+.plan-item.done .check-button {
+  border-color: var(--signal-success);
+  background: var(--signal-success-soft);
+}
+
+.completion-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--signal-success-soft);
+  border: 1px solid rgba(10, 107, 80, 0.3);
+  color: var(--signal-success-ink);
+  font-weight: 500;
+}

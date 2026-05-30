@@ -1,0 +1,79 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Motion entrance (GSAP targets) + reduced motion
+   ───────────────────────────────────────────────────────────────────────── */
+/* Long unbreakable strings (pasted URLs, IDs) must wrap, never push the layout. */
+.answer-copy,
+.question-bubble,
+.citation-card,
+.review-item,
+.recommendation-card,
+.timeline-list .stack-card,
+.profile-item {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Touch devices get ≥44px hit targets on otherwise-compact chip/pill controls.
+   Desktop (fine pointer) keeps the tighter sizing. */
+@media (pointer: coarse) {
+  .builder-tabs button,
+  .filter-row button,
+  .follow-up-row button,
+  .recent-searches button,
+  .answer-actions button,
+  .related-pages button,
+  .reader-topbar button,
+  .recommendation-card button,
+  .recommendation-card a,
+  .text-button,
+  .nav-links button {
+    min-height: 44px;
+  }
+  .check-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Default to visible: motion is an enhancement, never a gate. If JS/GSAP never
+   runs, content still shows. GSAP sets the hidden start state at runtime. */
+.motion-in,
+.reveal {
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-in,
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Print: a clean answer sheet for clients who print their guidance. */
+@media print {
+  .top-nav,
+  .bottom-tabs,
+  .ask-side,
+  .ask-panel-shell,
+  .answer-actions,
+  .follow-up-row,
+  .skip-link {
+    display: none !important;
+  }
+  body {
+    color: #000;
+  }
+  .answer-panel {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
