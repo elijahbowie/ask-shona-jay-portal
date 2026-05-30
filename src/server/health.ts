@@ -1,5 +1,5 @@
 import { createId, nowIso } from "./crypto";
-import { all, run, tenantId } from "./db";
+import { all, recordAuditEvent, run, tenantId } from "./db";
 
 export async function runHealthChecks(env: Env): Promise<number> {
   const now = nowIso();
@@ -92,18 +92,14 @@ export async function runHealthChecks(env: Env): Promise<number> {
     }
   }
 
-  await run(
-    env,
-    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    createId("audit"),
-    tenantId(),
-    "system",
-    "health.run",
-    "health",
-    "health_run",
-    JSON.stringify({ created }),
-    now
-  );
+  await recordAuditEvent(env, {
+    actor: "system",
+    action: "health.run",
+    targetType: "health",
+    targetId: "health_run",
+    metadata: { created },
+    at: now
+  });
   return created;
 }
 

@@ -37,6 +37,67 @@ export async function all<T>(env: Env, sql: string, ...binds: D1Value[]): Promis
   return result.results ?? [];
 }
 
+/** Every action recorded to audit_events — a closed set so a typo can't write an un-queryable row. */
+export type AuditAction =
+  | "auth.request_code"
+  | "auth.admin_password"
+  | "admin.contact_create"
+  | "admin.contact_sync"
+  | "escalation.create"
+  | "source.ingest"
+  | "wiki.publish"
+  | "wiki.edit"
+  | "health.run"
+  | "vector.skip"
+  | "vector.upsert"
+  | "plan.progress_read_failed"
+  | "recommendations.query_failed"
+  | "ai.fallback"
+  | "queue.process_failed";
+
+/** Every audit target type — closed set, paired with AuditAction. */
+export type AuditTargetType =
+  | "auth_code"
+  | "session"
+  | "client_profile"
+  | "escalation"
+  | "source"
+  | "wiki_page"
+  | "health"
+  | "system";
+
+/**
+ * Single source of truth for the audit_events insert — every audit write in the
+ * app routes through here. Centralizing the column order removes the hand-written
+ * copies and their bind-arity risk (the variadic run() signature cannot type-check
+ * arg count); the AuditAction / AuditTargetType unions reject typo'd, un-queryable
+ * values at compile time.
+ */
+export async function recordAuditEvent(
+  env: Env,
+  input: {
+    actor: string;
+    action: AuditAction;
+    targetType: AuditTargetType;
+    targetId: string;
+    metadata?: Record<string, unknown>;
+    at?: string;
+  }
+): Promise<void> {
+  await run(
+    env,
+    "INSERT INTO audit_events (id, tenant_id, actor, action, target_type, target_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    createId("audit"),
+    tenantId(),
+    input.actor,
+    input.action,
+    input.targetType,
+    input.targetId,
+    JSON.stringify(input.metadata ?? {}),
+    input.at ?? nowIso()
+  );
+}
+
 export async function seedIfNeeded(env: Env): Promise<void> {
   const existing = await first<{ id: string }>(env, "SELECT id FROM tenants WHERE id = ?", TENANT_ID);
   if (existing) {

@@ -27,23 +27,32 @@ import {
   UserCircle,
   WarningCircle
 } from "@phosphor-icons/react";
-import DOMPurify from "dompurify";
-import { marked } from "marked";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { AppMe, ChatAnswer, DashboardData, DownloadAsset, PlanItem, TrainingRecommendation, WikiPage } from "../shared/types";
+import { api } from "./lib/api";
+import { progressFor, readStorage, writeStorage } from "./lib/storage";
+import { sanitizeMarkdown } from "./lib/markdown";
+import {
+  categoryFor,
+  cleanCitationExcerpt,
+  followUpPrompts,
+  friendlyEntity,
+  impactCopy,
+  isActive,
+  isNewPage,
+  nextDeadline,
+  planCommitment,
+  readable,
+  readableState,
+  readinessScore,
+  suggestedPrompts,
+  titleForPath
+} from "./lib/insights";
+import type { ConversationEntry } from "./lib/types";
 import "./styles.css";
 
 gsap.registerPlugin(ScrollTrigger);
-
-type ApiError = { error: string };
-
-type ConversationEntry = {
-  id: string;
-  question: string;
-  answer: ChatAnswer;
-  createdAt: string;
-};
 
 type SpeechRecognitionConstructor = new () => SpeechRecognition;
 
@@ -61,26 +70,6 @@ type SpeechRecognition = {
 type SpeechRecognitionEvent = {
   results: ArrayLike<ArrayLike<{ transcript: string }>>;
 };
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {})
-    }
-  });
-  const data = (await response.json().catch(() => ({}))) as T | ApiError;
-  if (!response.ok) {
-    throw new Error(isApiError(data) ? data.error : `Request failed with ${response.status}`);
-  }
-  return data as T;
-}
-
-function isApiError(value: unknown): value is ApiError {
-  return typeof value === "object" && value !== null && "error" in value && typeof (value as ApiError).error === "string";
-}
 
 function App() {
   const [me, setMe] = useState<AppMe | null>(null);
@@ -112,15 +101,31 @@ function App() {
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
+      // Honor the OS preference: no transforms, all content visible immediately.
+      gsap.set(".motion-in, .reveal", { clearProps: "all", opacity: 1, y: 0 });
       return;
     }
     const ctx = gsap.context(() => {
-      const targets = gsap.utils.toArray<HTMLElement>(".motion-in");
+      // Entrance — every primary block animates in on route load. Never gated on
+      // scroll, so content the user is waiting on (e.g. an answer) is never gated
+      // behind a scroll (it fades in on mount rather than waiting for a ScrollTrigger).
       gsap.fromTo(
-        targets,
+        ".motion-in",
         { y: 18, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.48, stagger: 0.035, ease: "power3.out" }
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "power3.out" }
       );
+
+      // Scroll-linked reveals — opt-in, for stable decorative lists below the fold.
+      // ScrollTrigger fires immediately for items already in view, on scroll otherwise.
+      gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
+        gsap.from(el, {
+          y: 26,
+          opacity: 0,
+          duration: 0.55,
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 92%", once: true }
+        });
+      });
     });
 
     return () => ctx.revert();
@@ -334,8 +339,8 @@ function TopNav({
   const clientItems = [
     ["/ask", "Ask", <Sparkle size={17} weight="light" />],
     ["/learn", "Learn", <BookOpenText size={17} weight="light" />],
-    ["/my-plan", "My Plan", <ListChecks size={17} weight="light" />],
-    ["/more", "More", <UserCircle size={17} weight="light" />]
+    ["/my-plan", "Plan", <ListChecks size={17} weight="light" />],
+    ["/more", "Account", <UserCircle size={17} weight="light" />]
   ] as const;
   const adminItems = [
     ["/admin/review", "Review", <Gauge size={17} weight="light" />],
@@ -372,8 +377,8 @@ function BottomNav({ path, navigate }: { path: string; navigate: (path: string) 
   const items = [
     ["/ask", "Ask", <Sparkle size={22} weight="light" />],
     ["/learn", "Learn", <BookOpenText size={22} weight="light" />],
-    ["/my-plan", "My Plan", <ListChecks size={22} weight="light" />],
-    ["/more", "More", <UserCircle size={22} weight="light" />]
+    ["/my-plan", "Plan", <ListChecks size={22} weight="light" />],
+    ["/more", "Account", <UserCircle size={22} weight="light" />]
   ] as const;
   return (
     <nav className="bottom-tabs" aria-label="Client tabs">
@@ -507,11 +512,11 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
         </div>
       </div>
 
-      <aside className="ask-side motion-in">
+      <div className="ask-side motion-in">
         <DeadlineBanner deadline={deadline} onUse={() => setQuestion("What should I do before estimated taxes are due?")} />
         <ReadinessCard score={score} />
         <MemoryCard history={history} />
-      </aside>
+      </div>
 
       <div className="ask-panel-shell motion-in">
         <div className="ask-panel">
@@ -586,12 +591,12 @@ const promptGroups: Record<string, string[]> = {
     "Where could I be leaving tax savings on the table?"
   ],
   Hiring: [
-    "Should I classify this worker as a contractor?",
-    "What should I confirm before putting family members on payroll?"
+    "Should I treat this worker as a contractor or an employee?",
+    "What should I confirm before adding family members to payroll?"
   ],
   "Home Office": [
-    "What documents should I gather for business use of home?",
-    "How do I document an Augusta Rule rental?"
+    "What records should I keep for using part of my home for work?",
+    "How do I document renting my home to my business (the Augusta Rule)?"
   ]
 };
 
@@ -981,11 +986,11 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
           {recentSearches.map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}
         </div>
       ) : null}
-      <div className="learn-grid motion-in">
+      <div className="learn-grid">
         {filtered.map((item) => {
           const progress = progressFor(item.slug);
           return (
-            <button key={item.id} className="learn-card stack-card" onClick={() => navigate(`/learn/${item.slug}`)}>
+            <button key={item.id} className="learn-card stack-card reveal" onClick={() => navigate(`/learn/${item.slug}`)}>
               <div className="learn-card-top">
                 <span>{categoryFor(item.strategyKey)}</span>
                 {isNewPage(item) ? <strong>New</strong> : null}
@@ -1131,7 +1136,7 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
       <div className="page-intro motion-in">
         <p className="eyebrow">My Plan</p>
         <h1>A focused checklist from your profile.</h1>
-        <p>Check off what you have gathered. When a task affects payroll, filings, or entity setup, bring it to Shona/Jay before acting.</p>
+        <p>Check off what you have gathered. When something affects payroll, tax filings, or how your business is set up, check with Shona/Jay before you act.</p>
       </div>
       <div className="plan-summary motion-in">
         <Gauge size={28} weight="light" />
@@ -1176,7 +1181,7 @@ function MoreView({ me, navigate, logout }: { me: AppMe; navigate: (path: string
   return (
     <section className="content-page more-page">
       <div className="page-intro motion-in">
-        <p className="eyebrow">More</p>
+        <p className="eyebrow">Account</p>
         <h1>Your portal, settings, and history.</h1>
       </div>
       <div className="advisor-card motion-in">
@@ -1189,11 +1194,11 @@ function MoreView({ me, navigate, logout }: { me: AppMe; navigate: (path: string
       </div>
       <div className="profile-grid motion-in">
         <ProfileItem label="Email" value={client?.email || ""} />
-        <ProfileItem label="Tier" value={client?.tier || ""} />
-        <ProfileItem label="Entity" value={friendlyEntity(client?.entityType)} />
-        <ProfileItem label="Lifecycle" value={client?.lifecycleStage || ""} />
-        <ProfileItem label="Tags" value={(client?.tags || []).map(readable).join(", ")} />
-        <ProfileItem label="Security" value="Encrypted portal session with source-grounded answers" />
+        <ProfileItem label="Access level" value={client?.tier || ""} />
+        <ProfileItem label="Business type" value={friendlyEntity(client?.entityType)} />
+        <ProfileItem label="Your stage" value={client?.lifecycleStage || ""} />
+        <ProfileItem label="Focus areas" value={(client?.tags || []).map(readable).join(", ")} />
+        <ProfileItem label="Security" value="Encrypted session. Answers come straight from your trusted lessons." />
       </div>
       <div className="quick-actions motion-in">
         <button onClick={() => navigate("/history")}><ClockCounterClockwise size={20} weight="light" /> History <span>{saved.length}</span></button>
@@ -1518,184 +1523,8 @@ function ProfileItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function readableState(state: string): string {
-  const labels: Record<string, string> = {
-    answered_with_citations: "Answer from approved sources",
-    needs_more_context: "Shona may need more details",
-    cpa_review_recommended: "Recommended for expert review",
-    cannot_answer_from_approved_sources: "Shona will find the answer",
-    escalated_to_team: "Sent to Shona's team"
-  };
-  return labels[state] || readable(state);
-}
-
-function suggestedPrompts(me: AppMe): string[] {
-  const tags = new Set(me.client?.tags || []);
-  const prompts = [
-    "What should I do before estimated taxes are due?",
-    "Which Learn pages should I review before my next strategy call?",
-    "What documents should I gather before asking Shona to review this?"
-  ];
-  if (tags.has("hire-kids") || me.client?.hasChildren) {
-    prompts.unshift("Should I hire my kids, and what facts should I gather first?");
-  }
-  if (tags.has("augusta-rule")) {
-    prompts.unshift("How do I document an Augusta Rule rental?");
-  }
-  return prompts.slice(0, 5);
-}
-
-function sanitizeMarkdown(markdown: string): string {
-  return DOMPurify.sanitize(String(marked.parse(markdown)));
-}
-
-function titleForPath(path: string): string {
-  if (path.startsWith("/admin")) {
-    return "Admin | Ask Shona/Jay";
-  }
-  if (path.startsWith("/learn")) {
-    return "Learn | Ask Shona/Jay";
-  }
-  if (path.startsWith("/my-plan")) {
-    return "My Plan | Ask Shona/Jay";
-  }
-  if (path.startsWith("/more")) {
-    return "More | Ask Shona/Jay";
-  }
-  return "Ask | Ask Shona/Jay";
-}
-
-function isActive(path: string, href: string): boolean {
-  if (href === "/ask") {
-    return path === "/" || path === "/ask";
-  }
-  if (href === "/learn") {
-    return path.startsWith("/learn") || path.startsWith("/trainings");
-  }
-  if (href === "/my-plan") {
-    return path === "/my-plan" || path === "/plan";
-  }
-  if (href === "/more") {
-    return path === "/more" || path === "/account" || path === "/history";
-  }
-  return path === href;
-}
-
-function readStorage<T>(key: string, fallback: T): T {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? (JSON.parse(value) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeStorage<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function readable(value?: string): string {
-  return (value || "not set").replace(/[-_]/g, " ");
-}
-
-function friendlyEntity(value?: string): string {
-  const normalized = readable(value);
-  return normalized === "unknown" ? "Entity details pending" : normalized;
-}
-
-function readinessScore(me: AppMe, history: ConversationEntry[]): number {
-  let score = 52;
-  if (me.client?.entityType && me.client.entityType !== "unknown") score += 12;
-  if (me.client?.tags?.length) score += Math.min(18, me.client.tags.length * 6);
-  if (me.client?.hasChildren) score += 6;
-  if (history.length) score += Math.min(12, history.length * 3);
-  return Math.min(96, score);
-}
-
-function nextDeadline(): { label: string; days: number } {
-  const now = new Date();
-  const year = now.getFullYear();
-  const dates = [
-    new Date(year, 3, 15),
-    new Date(year, 5, 15),
-    new Date(year, 8, 15),
-    new Date(year + 1, 0, 15)
-  ];
-  const target = dates.find((date) => date.getTime() > now.getTime()) || dates[dates.length - 1];
-  return {
-    label: target.toLocaleDateString(undefined, { month: "long", day: "numeric" }),
-    days: Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 86_400_000))
-  };
-}
-
-function impactCopy(answer: ChatAnswer): string {
-  if (answer.state === "answered_with_citations") {
-    return "Businesses like yours often lose savings when documentation waits until year-end.";
-  }
-  if (answer.escalationRequired) {
-    return "A quick review now can prevent a wrong filing, payroll, or entity decision later.";
-  }
-  return "Use this as a fact-gathering step before Shona/Jay make a recommendation.";
-}
-
-function cleanCitationExcerpt(input: string): string {
-  return input
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function followUpPrompts(question: string, answer: ChatAnswer): string[] {
-  const lower = `${question} ${answer.answer}`.toLowerCase();
-  if (lower.includes("kid") || lower.includes("payroll")) {
-    return ["What documents should I gather first?", "When should Shona/Jay review this?", "What common mistakes should I avoid?"];
-  }
-  if (lower.includes("augusta") || lower.includes("rental")) {
-    return ["What should be in the agenda?", "What proof of rental value should I keep?", "When does this need expert review?"];
-  }
-  if (lower.includes("estimated")) {
-    return ["What numbers should I bring?", "What changed since last quarter?", "Which Learn page explains this?"];
-  }
-  return ["What facts would make this answer stronger?", "Which Learn page should I open?", "Should Shona/Jay review this?"];
-}
-
-function categoryFor(strategyKey: string): string {
-  if (strategyKey.includes("kid") || strategyKey.includes("classification")) return "People";
-  if (strategyKey.includes("estimated") || strategyKey.includes("qbi")) return "Tax Readiness";
-  if (strategyKey.includes("home") || strategyKey.includes("augusta")) return "Home & Office";
-  if (strategyKey.includes("retirement") || strategyKey.includes("health")) return "Benefits";
-  if (strategyKey.includes("vehicle") || strategyKey.includes("travel") || strategyKey.includes("179") || strategyKey.includes("depreciation")) return "Documentation";
-  return "Strategy";
-}
-
-function progressFor(slug: string): number {
-  return readStorage<number>(`learn-progress:${slug}`, 0);
-}
-
-function isNewPage(page: WikiPage): boolean {
-  const stamp = page.publishedAt || page.updatedAt;
-  if (!stamp) {
-    return false;
-  }
-  const age = Date.now() - new Date(stamp).getTime();
-  return age < 14 * 86_400_000;
-}
-
-function planCommitment(item: PlanItem): string {
-  if (item.done) {
-    return "Completed. Keep supporting documents handy for review.";
-  }
-  if (item.strategyKey.includes("estimated")) {
-    return "When you are ready, gather year-to-date income, withholding, and profit estimates.";
-  }
-  if (item.strategyKey.includes("kids")) {
-    return "When you are ready, gather role, hours, pay rate, and payroll details.";
-  }
-  if (item.strategyKey.includes("augusta")) {
-    return "When you are ready, gather agenda, attendees, notes, and comparable rates.";
-  }
-  return "When you are ready, gather facts and bring client-specific decisions to Shona/Jay.";
-}
+// Pure domain + presentation helpers (scoring, formatting, prompts, markdown,
+// storage, the API client) live in ./lib/* and are unit-tested independently.
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

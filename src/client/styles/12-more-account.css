@@ -1,0 +1,147 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   More / Account
+   ───────────────────────────────────────────────────────────────────────── */
+.advisor-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--brand-navy-deep) 0%, #00284a 100%);
+  color: var(--ink-on-brand);
+}
+
+.advisor-card svg {
+  color: var(--brand-sky);
+}
+
+.advisor-card h2 {
+  color: var(--ink-on-brand);
+  font-size: var(--type-h2-size);
+}
+
+.advisor-card .mini-label {
+  color: var(--brand-sky);
+}
+
+.advisor-card p {
+  color: var(--ink-on-brand-muted);
+  font-size: 14px;
+}
+
+.profile-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+}
+
+.profile-item span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-tertiary);
+  font-weight: 600;
+}
+
+.profile-item strong {
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--ink-primary);
+}
+
+.quick-actions {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.quick-actions button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-canvas);
+  border: 1px solid var(--surface-line);
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.quick-actions button:hover {
+  border-color: var(--brand-sky);
+  box-shadow: var(--elev-1);
+  transform: translateY(-1px);
+}
+
+.quick-actions button svg {
+  color: var(--brand-sky-strong);
+}
+
+.quick-actions button span {
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  min-width: 24px;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  background: var(--brand-mist);
+  color: var(--brand-sky-strong);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── History / generic timeline cards ──────────────────────────────────── */
+.timeline-list .stack-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  align-items: start;
+  padding: var(--space-5);
+  color: var(--brand-sky-strong);
+}
+
+.timeline-list .stack-card h2 {
+  font-size: var(--type-h3-size);
+}
+
+.timeline-list .stack-card p {
+  color: var(--ink-secondary);
+  font-size: 14px;
+  margin-top: var(--space-1);
+}
+
+.timeline-list .stack-card span {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: 12px;
+  color: var(--ink-tertiary);
+}
+
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding: var(--space-10) var(--space-6);
+  grid-template-columns: 1fr !important;
+}
+
+.empty-list h2 {
+  font-size: var(--type-h2-size);
+}
+
+.empty-list p {
+  color: var(--ink-tertiary);
+}

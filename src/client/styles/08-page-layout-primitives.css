@@ -1,0 +1,36 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Page layout primitives
+   ───────────────────────────────────────────────────────────────────────── */
+.content-page {
+  max-width: var(--content-wide);
+  margin: 0 auto;
+  padding: var(--space-10) var(--gutter-page) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.page-intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--content-prose);
+}
+
+.page-intro h1 {
+  font-size: var(--type-d2-size);
+  line-height: var(--type-d2-line);
+}
+
+.page-intro > p {
+  color: var(--ink-secondary);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.stack-card {
+  background: var(--surface-canvas);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-1);
+}

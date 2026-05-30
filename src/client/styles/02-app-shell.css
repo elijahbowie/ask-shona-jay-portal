@@ -1,0 +1,25 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   App shell
+   ───────────────────────────────────────────────────────────────────────── */
+.app-shell {
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 80% at 100% -10%, var(--brand-mist) 0%, transparent 46%),
+    var(--surface-canvas);
+  padding-bottom: var(--space-24);
+}
+
+.app-shell:focus {
+  outline: none;
+}
+
+.client-shell {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 880px) {
+  .client-shell,
+  .admin-shell {
+    padding-bottom: var(--space-24);
+  }
+}
