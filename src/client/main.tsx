@@ -112,15 +112,30 @@ function App() {
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
+      // Honor the OS preference: no transforms, all content visible immediately.
+      gsap.set(".motion-in, .reveal", { clearProps: "all", opacity: 1, y: 0 });
       return;
     }
     const ctx = gsap.context(() => {
-      const targets = gsap.utils.toArray<HTMLElement>(".motion-in");
+      // Entrance — every primary block animates in on route load. Never gated on
+      // scroll, so content the user is waiting on (e.g. an answer) is never hidden.
       gsap.fromTo(
-        targets,
+        ".motion-in",
         { y: 18, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.48, stagger: 0.035, ease: "power3.out" }
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "power3.out" }
       );
+
+      // Scroll-linked reveals — opt-in, for stable decorative lists below the fold.
+      // ScrollTrigger fires immediately for items already in view, on scroll otherwise.
+      gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
+        gsap.from(el, {
+          y: 26,
+          opacity: 0,
+          duration: 0.55,
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 92%", once: true }
+        });
+      });
     });
 
     return () => ctx.revert();
@@ -334,8 +349,8 @@ function TopNav({
   const clientItems = [
     ["/ask", "Ask", <Sparkle size={17} weight="light" />],
     ["/learn", "Learn", <BookOpenText size={17} weight="light" />],
-    ["/my-plan", "My Plan", <ListChecks size={17} weight="light" />],
-    ["/more", "More", <UserCircle size={17} weight="light" />]
+    ["/my-plan", "Plan", <ListChecks size={17} weight="light" />],
+    ["/more", "Account", <UserCircle size={17} weight="light" />]
   ] as const;
   const adminItems = [
     ["/admin/review", "Review", <Gauge size={17} weight="light" />],
@@ -372,8 +387,8 @@ function BottomNav({ path, navigate }: { path: string; navigate: (path: string) 
   const items = [
     ["/ask", "Ask", <Sparkle size={22} weight="light" />],
     ["/learn", "Learn", <BookOpenText size={22} weight="light" />],
-    ["/my-plan", "My Plan", <ListChecks size={22} weight="light" />],
-    ["/more", "More", <UserCircle size={22} weight="light" />]
+    ["/my-plan", "Plan", <ListChecks size={22} weight="light" />],
+    ["/more", "Account", <UserCircle size={22} weight="light" />]
   ] as const;
   return (
     <nav className="bottom-tabs" aria-label="Client tabs">
@@ -507,11 +522,11 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
         </div>
       </div>
 
-      <aside className="ask-side motion-in">
+      <div className="ask-side motion-in">
         <DeadlineBanner deadline={deadline} onUse={() => setQuestion("What should I do before estimated taxes are due?")} />
         <ReadinessCard score={score} />
         <MemoryCard history={history} />
-      </aside>
+      </div>
 
       <div className="ask-panel-shell motion-in">
         <div className="ask-panel">
@@ -586,12 +601,12 @@ const promptGroups: Record<string, string[]> = {
     "Where could I be leaving tax savings on the table?"
   ],
   Hiring: [
-    "Should I classify this worker as a contractor?",
-    "What should I confirm before putting family members on payroll?"
+    "Should I treat this worker as a contractor or an employee?",
+    "What should I confirm before adding family members to payroll?"
   ],
   "Home Office": [
-    "What documents should I gather for business use of home?",
-    "How do I document an Augusta Rule rental?"
+    "What records should I keep for using part of my home for work?",
+    "How do I document renting my home to my business (the Augusta Rule)?"
   ]
 };
 
@@ -981,11 +996,11 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
           {recentSearches.map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}
         </div>
       ) : null}
-      <div className="learn-grid motion-in">
+      <div className="learn-grid">
         {filtered.map((item) => {
           const progress = progressFor(item.slug);
           return (
-            <button key={item.id} className="learn-card stack-card" onClick={() => navigate(`/learn/${item.slug}`)}>
+            <button key={item.id} className="learn-card stack-card reveal" onClick={() => navigate(`/learn/${item.slug}`)}>
               <div className="learn-card-top">
                 <span>{categoryFor(item.strategyKey)}</span>
                 {isNewPage(item) ? <strong>New</strong> : null}
@@ -1131,7 +1146,7 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
       <div className="page-intro motion-in">
         <p className="eyebrow">My Plan</p>
         <h1>A focused checklist from your profile.</h1>
-        <p>Check off what you have gathered. When a task affects payroll, filings, or entity setup, bring it to Shona/Jay before acting.</p>
+        <p>Check off what you have gathered. When something affects payroll, tax filings, or how your business is set up, check with Shona/Jay before you act.</p>
       </div>
       <div className="plan-summary motion-in">
         <Gauge size={28} weight="light" />
@@ -1176,7 +1191,7 @@ function MoreView({ me, navigate, logout }: { me: AppMe; navigate: (path: string
   return (
     <section className="content-page more-page">
       <div className="page-intro motion-in">
-        <p className="eyebrow">More</p>
+        <p className="eyebrow">Account</p>
         <h1>Your portal, settings, and history.</h1>
       </div>
       <div className="advisor-card motion-in">
@@ -1189,11 +1204,11 @@ function MoreView({ me, navigate, logout }: { me: AppMe; navigate: (path: string
       </div>
       <div className="profile-grid motion-in">
         <ProfileItem label="Email" value={client?.email || ""} />
-        <ProfileItem label="Tier" value={client?.tier || ""} />
-        <ProfileItem label="Entity" value={friendlyEntity(client?.entityType)} />
-        <ProfileItem label="Lifecycle" value={client?.lifecycleStage || ""} />
-        <ProfileItem label="Tags" value={(client?.tags || []).map(readable).join(", ")} />
-        <ProfileItem label="Security" value="Encrypted portal session with source-grounded answers" />
+        <ProfileItem label="Access level" value={client?.tier || ""} />
+        <ProfileItem label="Business type" value={friendlyEntity(client?.entityType)} />
+        <ProfileItem label="Your stage" value={client?.lifecycleStage || ""} />
+        <ProfileItem label="Focus areas" value={(client?.tags || []).map(readable).join(", ")} />
+        <ProfileItem label="Security" value="Encrypted session. Answers come straight from your trusted lessons." />
       </div>
       <div className="quick-actions motion-in">
         <button onClick={() => navigate("/history")}><ClockCounterClockwise size={20} weight="light" /> History <span>{saved.length}</span></button>
@@ -1540,7 +1555,7 @@ function suggestedPrompts(me: AppMe): string[] {
     prompts.unshift("Should I hire my kids, and what facts should I gather first?");
   }
   if (tags.has("augusta-rule")) {
-    prompts.unshift("How do I document an Augusta Rule rental?");
+    prompts.unshift("How do I document renting my home to my business (the Augusta Rule)?");
   }
   return prompts.slice(0, 5);
 }
@@ -1600,7 +1615,7 @@ function readable(value?: string): string {
 
 function friendlyEntity(value?: string): string {
   const normalized = readable(value);
-  return normalized === "unknown" ? "Entity details pending" : normalized;
+  return normalized === "unknown" ? "Business details pending" : normalized;
 }
 
 function readinessScore(me: AppMe, history: ConversationEntry[]): number {

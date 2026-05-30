@@ -5,6 +5,10 @@ node_modules/
 dist/
 .vite/
 
+# Design verification screenshots (regenerable; kept out of history to stay lean).
+# The committed visual deliverables are the wireframe SVGs in design/wireframes/.
+design/research/*.png
+
 # Cloudflare local state and generated runtime files
 .wrangler/
 .mf/
