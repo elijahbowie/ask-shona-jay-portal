@@ -610,7 +610,7 @@ function buildMarkdown(source) {
   const sourceList = source.sourceLinks.map(([label, url]) => `- [${label}](${url})`).join("\n");
   return `# ${source.title}
 
-> Federal public-source education. Not personalized tax, legal, payroll, or state-law advice. Ask Shona/Jay before acting.
+> Federal public-source education. Not personalized tax, legal, payroll, or state-law advice. Ask Advisor before acting.
 
 **Preview status:** Public-Source Preview: Educational Only  
 **Tax year label:** 2026 starter library  

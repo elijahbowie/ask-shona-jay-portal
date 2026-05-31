@@ -82,7 +82,7 @@ describe("sendLoginCodeEmail", () => {
       contactId: "contact_123",
       locationId: "location_123",
       emailTo: "client@example.com",
-      subject: "Your Ask Shona/Jay login code"
+      subject: "Your Ask Advisor login code"
     });
     expect(body.message).toContain("654321");
     expect(body.html).toContain("654321");

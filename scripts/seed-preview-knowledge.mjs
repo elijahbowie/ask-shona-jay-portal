@@ -26,12 +26,12 @@ const HEADERS_JSON = { "content-type": "application/json" };
 
 const seedSources = [
   {
-    title: "Start Here: How to Use Ask Shona/Jay Safely",
+    title: "Start Here: How to Use Ask Advisor Safely",
     strategyKey: "portal-safety",
     overview:
-      "This starter page explains how to use the Ask Shona/Jay portal during preview. The portal can summarize approved source material, point clients to training pages, and identify when a question needs advisor review. It should not be treated as a substitute for a personalized CPA engagement, legal review, payroll review, state tax review, or formal filing position.",
+      "This starter page explains how to use the Ask Advisor portal during preview. The portal can summarize approved source material, point clients to training pages, and identify when a question needs advisor review. It should not be treated as a substitute for a personalized CPA engagement, legal review, payroll review, state tax review, or formal filing position.",
     whenThisMatters:
-      "Use this page whenever a client wants to understand what the portal can and cannot do. The safest pattern is to use Ask Shona/Jay to gather facts, find the right education, prepare documents, and know when to ask the team for a decision.",
+      "Use this page whenever a client wants to understand what the portal can and cannot do. The safest pattern is to use Ask Advisor to gather facts, find the right education, prepare documents, and know when to ask the team for a decision.",
     shonaJayFrame:
       "Preview positioning: Shona/Jay might frame the portal as a way to help clients come to meetings better prepared, reduce repeated basic questions, and route fact-sensitive decisions to the team instead of guessing.",
     factChecklist: [
@@ -835,7 +835,7 @@ function buildMarkdown(source) {
 
   return `# ${source.title}
 
-> Federal public-source education. Not personalized tax, legal, payroll, or state-law advice. Ask Shona/Jay before acting.
+> Federal public-source education. Not personalized tax, legal, payroll, or state-law advice. Ask Advisor before acting.
 
 **Preview status:** Public-Source Preview: Educational Only  
 **Tax year label:** 2026 starter library  

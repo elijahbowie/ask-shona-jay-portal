@@ -202,7 +202,7 @@ export async function createGhlContact(
       email,
       firstName: input.firstName,
       lastName: input.lastName,
-      source: input.source || "Ask Shona/Jay portal"
+      source: input.source || "Ask Advisor portal"
     })
   });
 
@@ -240,9 +240,9 @@ export async function sendGhlLoginCode(
       contactId,
       locationId: env.GHL_LOCATION_ID,
       emailTo: input.email,
-      subject: "Your Ask Shona/Jay login code",
-      message: `Your Ask Shona/Jay login code is ${input.code}. It expires at ${input.expiresAt}.`,
-      html: `<p>Your Ask Shona/Jay login code is <strong>${input.code}</strong>.</p><p>It expires at ${input.expiresAt}.</p>`
+      subject: "Your Ask Advisor login code",
+      message: `Your Ask Advisor login code is ${input.code}. It expires at ${input.expiresAt}.`,
+      html: `<p>Your Ask Advisor login code is <strong>${input.code}</strong>.</p><p>It expires at ${input.expiresAt}.</p>`
     })
   });
   if (!response.ok) {
@@ -285,7 +285,7 @@ export async function sendGhlEscalation(env: Env, input: { clientEmail: string; 
     },
     body: JSON.stringify({
       locationId: env.GHL_LOCATION_ID,
-      title: `Ask Shona/Jay escalation for ${input.clientEmail}`,
+      title: `Ask Advisor escalation for ${input.clientEmail}`,
       body: `${input.summary}\n\nSecure portal: ${input.portalUrl}`,
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     })

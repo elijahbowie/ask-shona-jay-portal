@@ -57,18 +57,18 @@ export function suggestedPrompts(me: AppMe): string[] {
 
 export function titleForPath(path: string): string {
   if (path.startsWith("/admin")) {
-    return "Admin | Ask Shona/Jay";
+    return "Admin | Ask Advisor";
   }
   if (path.startsWith("/learn")) {
-    return "Learn | Ask Shona/Jay";
+    return "Learn | Ask Advisor";
   }
   if (path.startsWith("/my-plan")) {
-    return "My Plan | Ask Shona/Jay";
+    return "My Plan | Ask Advisor";
   }
   if (path.startsWith("/more")) {
-    return "More | Ask Shona/Jay";
+    return "More | Ask Advisor";
   }
-  return "Ask | Ask Shona/Jay";
+  return "Ask | Ask Advisor";
 }
 
 export function isActive(path: string, href: string): boolean {

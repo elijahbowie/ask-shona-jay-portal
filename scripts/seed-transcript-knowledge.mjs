@@ -25,7 +25,7 @@ const ADMIN_SOURCES_PATH = "/api/admin/sources";
 const ADMIN_HEALTH_PATH = "/api/admin/health/run";
 const HEADERS_JSON = { "content-type": "application/json" };
 const PREVIEW_BANNER =
-  "Transcript-derived Beyond Freedom education. Not personalized tax, legal, payroll, or state-law advice. Ask Shona/Jay before acting.";
+  "Transcript-derived Beyond Freedom education. Not personalized tax, legal, payroll, or state-law advice. Ask Advisor before acting.";
 const STALE_SEGMENT_PATTERNS = [
   /\b2024\b/,
   /\b2025\b/,

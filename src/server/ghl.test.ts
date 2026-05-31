@@ -249,7 +249,7 @@ describe("sendGhlEscalation", () => {
     const body = JSON.parse(String(calls[0][1].body));
     expect(body).toMatchObject({
       locationId: "location_123",
-      title: "Ask Shona/Jay escalation for client@example.com"
+      title: "Ask Advisor escalation for client@example.com"
     });
     expect(body.body).toContain("Needs review");
     expect(body.body).toContain("https://ask.beyondfreedomfinancial.com/admin/questions?escalation=esc_1");

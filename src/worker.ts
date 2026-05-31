@@ -434,7 +434,7 @@ app.post("/api/admin/contacts", async (c) => {
     email,
     firstName,
     lastName,
-    source: "Ask Shona/Jay portal preview"
+    source: "Ask Advisor portal preview"
   });
   await upsertClientProfile(c.env, {
     email,
