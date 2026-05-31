@@ -177,7 +177,7 @@ function LoadingScreen() {
       <div className="orbital-mark">
         <Sparkle size={28} weight="light" />
       </div>
-      <p>Opening Ask Shona/Jay</p>
+      <p>Opening Ask Advisor</p>
     </main>
   );
 }
@@ -260,7 +260,7 @@ function LoginScreen({ onLogin }: { onLogin: (me: AppMe) => void }) {
         </div>
         <h1>Tax strategy guidance with receipts.</h1>
         <p>
-          Ask Shona/Jay turns approved education into clear answers, source links, and team review when the facts need a human.
+          Ask Advisor turns approved education into clear answers, source links, and team review when the facts need a human.
         </p>
         <div className="brand-signal" aria-hidden="true">
           <span />
@@ -356,7 +356,7 @@ function TopNav({
     <nav className="top-nav motion-in" aria-label="Primary">
       <button className="wordmark" onClick={() => navigate(me.role === "admin" ? "/admin/review" : "/ask")}>
         <span className="wordmark-mark" aria-hidden="true">BF</span>
-        <span>Ask Shona/Jay</span>
+        <span>Ask Advisor</span>
       </button>
       <div className="nav-links">
         {items.map(([href, label, icon]) => (
@@ -500,7 +500,7 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
   return (
     <section className="page-grid ask-layout">
       <div className="page-intro motion-in">
-        <p className="eyebrow">Ask Shona/Jay</p>
+        <p className="eyebrow">Ask Advisor</p>
         <h1>Start with the question you would bring to the call.</h1>
         <p>
           The assistant searches approved education, cites its sources, and asks for team review when the answer depends on your facts.
@@ -533,7 +533,7 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
             <div className="ask-actions">
               <VoiceButton onTranscript={(text) => setQuestion((current) => `${current}${current ? " " : ""}${text}`.trim())} />
               <button className="primary-button ask-submit" type="submit" disabled={busy}>
-                <span>{busy ? "Searching approved sources" : "Ask Shona/Jay"}</span>
+                <span>{busy ? "Searching approved sources" : "Ask Advisor"}</span>
                 <span className="button-orb"><PaperPlaneTilt size={17} /></span>
               </button>
             </div>

@@ -99,7 +99,7 @@ async function main() {
 
   try {
     const { response, text } = await fetchText(`${portalOrigin}/`);
-    record("portal subdomain serves app", response.ok && text.includes("Ask Shona/Jay"), `${response.status}`);
+    record("portal subdomain serves app", response.ok && text.includes("Ask Advisor"), `${response.status}`);
   } catch (error) {
     record("portal subdomain serves app", false, String(error));
   }

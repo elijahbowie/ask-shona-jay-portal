@@ -1,5 +1,5 @@
 /*
- * Wireframe generator — Ask Shona/Jay.
+ * Wireframe generator — Ask Advisor.
  * Emits low-fidelity SVG wireframes for every screen (desktop + mobile).
  * Wireframes are intentionally grayscale + structural: they communicate
  * information architecture and layout, not final visuals (the final visuals
@@ -118,7 +118,7 @@ function phoneFrame(w, h) {
 function topNav(x, w, y, items, active) {
   let out = rect(x, y, w, 46, { r: 10, fill: C.navy, stroke: "none" });
   out += rect(x + 14, y + 12, 22, 22, { r: 6, fill: C.accent, stroke: "none" });
-  out += text(x + 44, y + 28, "Ask Shona/Jay", { size: 12, fill: "#fff", weight: 700 });
+  out += text(x + 44, y + 28, "Ask Advisor", { size: 12, fill: "#fff", weight: 700 });
   let cx = x + 170;
   for (const it of items) {
     const w2 = 20 + it.length * 6.4;
@@ -212,7 +212,7 @@ screens["02-loading"] = () => {
   b += rect(8, f.top, W - 16, H - f.top - 8, { r: 0, fill: C.navy, stroke: "none" });
   b += `<circle cx="${W / 2}" cy="${H / 2 - 20}" r="34" fill="rgba(52,152,219,0.18)" stroke="${C.accent}"/>`;
   b += `<circle cx="${W / 2}" cy="${H / 2 - 20}" r="50" fill="none" stroke="rgba(52,152,219,0.4)" stroke-dasharray="4 6"/>`;
-  b += text(W / 2, H / 2 + 44, "Opening Ask Shona/Jay", { size: 13, fill: "#cfe2f3", anchor: "middle", weight: 500 });
+  b += text(W / 2, H / 2 + 44, "Opening Ask Advisor", { size: 13, fill: "#cfe2f3", anchor: "middle", weight: 500 });
   b += note(W / 2 - 220, H / 2 + 80, 440, "Doherty threshold: a branded, animated hold under ~400ms reads as 'working', preventing the 'is it broken?' bounce on first paint.");
   return svg(W, H, b);
 };
@@ -229,7 +229,7 @@ screens["03-ask-empty-desktop"] = () => {
   let b = f.out; const top = f.top; const px = f.padX;
   b += topNav(px, W - px * 2 - 16, top, CLIENT_NAV, "Ask");
   let y = top + 78;
-  b += pageHeader(px, y, "Ask Shona/Jay", "Start with the question you'd bring to the call.");
+  b += pageHeader(px, y, "Ask Advisor", "Start with the question you'd bring to the call.");
   y += 70;
   // chips
   let cxp = px;
@@ -251,7 +251,7 @@ screens["03-ask-empty-desktop"] = () => {
   b += rect(px + 20, y + 330, mainW - 40, 70, { r: 10, fill: C.frame, stroke: C.lineSoft });
   b += text(px + 32, y + 356, "Or type your own question", { size: 11, fill: C.inkSoft });
   b += pill(px + 20, y + 415, 110, "Voice note", {});
-  b += primary(px + mainW - 190, y + 408, 170, "Ask Shona/Jay");
+  b += primary(px + mainW - 190, y + 408, 170, "Ask Advisor");
   // sidebar
   const sx = px + mainW + 24;
   b += rect(sx, y, 320, 120, { r: 14, fill: C.frame, stroke: C.line });
@@ -291,7 +291,7 @@ screens["03-ask-empty-mobile"] = () => {
   b += rect(px, y, W - px * 2, 80, { r: 12, fill: C.frame, stroke: C.lineSoft });
   b += text(px + 14, y + 24, "Type your question", { size: 11, fill: C.inkSoft });
   y += 92;
-  b += primary(px, y, W - px * 2, "Ask Shona/Jay");
+  b += primary(px, y, W - px * 2, "Ask Advisor");
   b += bottomTabs(px, W - px * 2, H - 70, CLIENT_NAV, "Ask");
   b += note(px, y + 56, W - px * 2, "Fitts's law: full-width primary action sits in the thumb zone for one-handed phone use.");
   return svg(W, H, b);

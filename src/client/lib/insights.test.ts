@@ -121,9 +121,9 @@ describe("suggestedPrompts", () => {
 
 describe("titleForPath", () => {
   it("derives a per-section document title", () => {
-    expect(titleForPath("/admin/review")).toBe("Admin | Ask Shona/Jay");
-    expect(titleForPath("/learn/some-slug")).toBe("Learn | Ask Shona/Jay");
-    expect(titleForPath("/anything-else")).toBe("Ask | Ask Shona/Jay");
+    expect(titleForPath("/admin/review")).toBe("Admin | Ask Advisor");
+    expect(titleForPath("/learn/some-slug")).toBe("Learn | Ask Advisor");
+    expect(titleForPath("/anything-else")).toBe("Ask | Ask Advisor");
   });
 });
 
