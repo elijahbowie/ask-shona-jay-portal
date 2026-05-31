@@ -1081,10 +1081,36 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
   );
 }
 
+async function triggerDownload(url: string, filename: string): Promise<void> {
+  const resp = await fetch(url, { credentials: "include" });
+  if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+  const blob = await resp.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(objectUrl);
+}
+
 function DownloadsSection({ assets }: { assets: DownloadAsset[] }) {
+  const [downloading, setDownloading] = useState("");
+
   if (!assets.length) {
     return null;
   }
+
+  const handleDownload = async (asset: DownloadAsset) => {
+    setDownloading(asset.id);
+    try {
+      await triggerDownload(asset.downloadUrl, asset.filename);
+    } finally {
+      setDownloading("");
+    }
+  };
+
   return (
     <section className="downloads-panel motion-in" aria-label="Downloads">
       <div>
@@ -1093,11 +1119,16 @@ function DownloadsSection({ assets }: { assets: DownloadAsset[] }) {
       </div>
       <div className="download-grid">
         {assets.map((asset) => (
-          <a key={asset.id} href={asset.downloadUrl} target="_blank" rel="noreferrer">
+          <a
+            key={asset.id}
+            href={asset.downloadUrl}
+            onClick={(e) => { e.preventDefault(); handleDownload(asset); }}
+            aria-busy={downloading === asset.id}
+          >
             <DownloadSimple size={20} weight="light" />
             <span>
               <strong>{asset.title}</strong>
-              <small>{asset.description}</small>
+              <small>{downloading === asset.id ? "Downloading…" : asset.description}</small>
             </span>
           </a>
         ))}
