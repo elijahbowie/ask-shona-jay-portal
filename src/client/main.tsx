@@ -346,6 +346,7 @@ function TopNav({
     ["/admin/review", "Review", <Gauge size={17} weight="light" />],
     ["/admin/sources", "Sources", <UploadSimple size={17} weight="light" />],
     ["/admin/wiki", "Wiki", <FileText size={17} weight="light" />],
+    ["/admin/assets", "Assets", <DownloadSimple size={17} weight="light" />],
     ["/admin/questions", "Questions", <PaperPlaneTilt size={17} weight="light" />],
     ["/admin/health", "Health", <Heartbeat size={17} weight="light" />],
     ["/admin/settings", "Settings", <Database size={17} weight="light" />]
@@ -1248,6 +1249,9 @@ function AdminRouter({ path }: { path: string; navigate: (path: string) => void 
   if (path === "/admin/wiki") {
     return <AdminWiki />;
   }
+  if (path === "/admin/assets") {
+    return <AdminAssets />;
+  }
   if (path === "/admin/questions") {
     return <AdminQuestions />;
   }
@@ -1447,6 +1451,65 @@ function AdminHealth() {
           </article>
         ))}
       </div>
+    </section>
+  );
+}
+
+function AdminAssets() {
+  const [assets, setAssets] = useState<DownloadAsset[]>([]);
+  const [deleting, setDeleting] = useState("");
+
+  const load = () => api<{ assets: DownloadAsset[] }>("/api/admin/assets").then((data) => setAssets(data.assets));
+  useEffect(() => { load(); }, []);
+
+  const remove = async (asset: DownloadAsset) => {
+    if (!confirm(`Delete "${asset.title}"? This removes the file from storage.`)) return;
+    setDeleting(asset.id);
+    try {
+      await api(`/api/admin/assets/${encodeURIComponent(asset.id)}`, { method: "DELETE", body: "{}" });
+      await load();
+    } finally {
+      setDeleting("");
+    }
+  };
+
+  const cols = "2fr 1.5fr 1.5fr 5rem";
+
+  return (
+    <section className="admin-page">
+      <AdminHeader title="Download Assets" subtitle="Files served from the import script. Delete to remove from lessons and storage." />
+      {assets.length === 0 ? (
+        <p className="notice motion-in">No assets found. Run the import script to upload files.</p>
+      ) : (
+        <section className="table-shell motion-in">
+          <h2>{assets.length} assets</h2>
+          <div className="data-table" role="table" aria-label="Download assets">
+            <div className="data-row head" role="row" style={{ gridTemplateColumns: cols }}>
+              <span role="columnheader">Title</span>
+              <span role="columnheader">Lesson</span>
+              <span role="columnheader">File</span>
+              <span role="columnheader"></span>
+            </div>
+            {assets.map((asset) => (
+              <div className="data-row" key={asset.id} role="row" style={{ gridTemplateColumns: cols }}>
+                <span role="cell">{asset.title}</span>
+                <span role="cell">{asset.linkedSlug}</span>
+                <span role="cell">{asset.filename}</span>
+                <span role="cell">
+                  <button
+                    className="text-button"
+                    onClick={() => remove(asset)}
+                    disabled={deleting === asset.id}
+                    aria-label={`Delete ${asset.title}`}
+                  >
+                    {deleting === asset.id ? "Deleting…" : "Delete"}
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </section>
   );
 }
