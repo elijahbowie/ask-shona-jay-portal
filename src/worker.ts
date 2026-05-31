@@ -19,7 +19,7 @@ import type { ClientProfile, WikiPage } from "./shared/types";
 import { sendLoginCodeEmail } from "./server/email";
 import { allowedVisibilityTiers } from "./server/vector";
 import { notifyGhlEscalation } from "./server/escalations";
-import { assetForDownload, assetsForSlug, contentDisposition, publishedAssets } from "./server/assets";
+import { adminListAssets, assetForDownload, assetsForSlug, contentDisposition, deleteAsset, publishedAssets } from "./server/assets";
 import { buildAdminReview } from "./server/review";
 import { recommendPagesForClient } from "./server/personalization";
 
@@ -335,6 +335,22 @@ app.patch("/api/plan/items", async (c) => {
     now,
     now
   );
+  return c.json({ ok: true });
+});
+
+app.get("/api/admin/assets", async (c) => {
+  await requireAdmin(c);
+  const assets = await adminListAssets(c.env);
+  return c.json({ assets });
+});
+
+app.delete("/api/admin/assets/:id", async (c) => {
+  await requireAdmin(c);
+  const r2Key = await deleteAsset(c.env, c.req.param("id"));
+  if (!r2Key) {
+    return c.json({ error: "Asset not found." }, 404);
+  }
+  await c.env.CONTENT_BUCKET.delete(r2Key);
   return c.json({ ok: true });
 });
 
