@@ -235,8 +235,15 @@ app.get("/api/trainings/:slug", async (c) => {
 });
 
 app.get("/api/assets/:id/download", async (c) => {
-  const session = await requireClient(c);
-  const asset = await assetForDownload(c.env, c.req.param("id"), session.client.tier);
+  const session = await getSession(c);
+  if (!session) {
+    throw new Response(JSON.stringify({ error: "Authentication required." }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  const tier = session.role === "admin" ? "high" : (session.client?.tier ?? "low");
+  const asset = await assetForDownload(c.env, c.req.param("id"), tier);
   if (!asset) {
     return c.json({ error: "Download not found." }, 404);
   }
