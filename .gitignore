@@ -27,6 +27,7 @@ worker-configuration.d.ts
 .seed-preview-knowledge/
 .asset-runs/
 .transcript-knowledge-runs/
+.wiki-playbook-runs/
 .official-lessons-runs/
 raw/
 

@@ -63,7 +63,7 @@ export function titleForPath(path: string): string {
     return "Learn | Ask Advisor";
   }
   if (path.startsWith("/my-plan")) {
-    return "My Plan | Ask Advisor";
+    return "Checklist | Ask Advisor";
   }
   if (path.startsWith("/more")) {
     return "More | Ask Advisor";
@@ -79,7 +79,7 @@ export function isActive(path: string, href: string): boolean {
     return path.startsWith("/learn") || path.startsWith("/trainings");
   }
   if (href === "/my-plan") {
-    return path === "/my-plan" || path === "/plan";
+    return path === "/my-plan" || path === "/plan" || path === "/checklist";
   }
   if (href === "/more") {
     return path === "/more" || path === "/account" || path === "/history";

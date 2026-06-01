@@ -51,7 +51,7 @@
 
   --type-d1-size: clamp(40px, 5.6vw, 56px);
   --type-d1-line: 1.1;
-  --type-d2-size: clamp(30px, 4vw, 40px);
+  --type-d2-size: clamp(28px, 3.4vw, 36px);
   --type-d2-line: 1.2;
   --type-h1-size: clamp(24px, 3vw, 32px);
   --type-h1-line: 1.25;
@@ -84,8 +84,8 @@
   /* ── Radius ────────────────────────────────────────────────────────── */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
   --radius-pill: 999px;
 
   /* ── Elevation ─────────────────────────────────────────────────────── */

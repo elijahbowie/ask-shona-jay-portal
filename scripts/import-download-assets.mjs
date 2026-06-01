@@ -9,12 +9,14 @@ const mode = process.argv.includes("--apply") ? "apply" : process.argv.includes(
 const root = process.cwd();
 const tenantId = "tenant_beyond_freedom";
 const origin = process.env.APP_ORIGIN || "https://ask.beyondfreedomfinancial.com";
-const adminPassword = process.env.ADMIN_PREVIEW_PASSWORD || "BEYOND";
+const adminPassword = process.env.ADMIN_MASTER_PASSWORD;
+const adminSessionCookie = process.env.ADMIN_SESSION_COOKIE;
 const database = process.env.D1_DATABASE || "ask-shona-jay-db-production";
 const bucket = process.env.R2_BUCKET || "ask-shona-jay-content-production";
 const updatedTrainings = join(root, "Updated Trainings");
 const runsDir = join(root, ".asset-runs");
 const latestManifest = join(runsDir, "latest-download-assets-manifest.json");
+const latestPlan = join(runsDir, "latest-download-assets-plan.json");
 const runId = new Date().toISOString().replace(/[:.]/g, "-");
 const runDir = join(runsDir, runId);
 const generatedDir = join(runDir, "generated-assets");
@@ -64,11 +66,58 @@ const generatedAssets = [
   ]),
   generatedXlsx("Accountable Plan Reimbursement Form", "Monthly reimbursement form for accountable plan expenses.", "accountable-plan-monthly-kit", "accountable-plan-monthly-reimbursement-kit", "Accountable-Plan-Reimbursement-Form.xlsx", ["Date", "Expense Category", "Business Purpose", "Amount", "Receipt Attached", "Submitted Date", "Reimbursed Date", "Excess Returned"]),
   generatedXlsx("Year-End Closeout Checklist", "Checklist for gathering books, payroll, deduction, and entity records before year-end review.", "year-end-closeout-kit", "year-end-strategy-closeout-kit", "Year-End-Closeout-Checklist.xlsx", ["Area", "Item", "Owner", "Due Date", "Status", "Notes"]),
+  generatedDocx("IRS Notice Response Packet", "Packet for gathering notice pages, transcript details, payment proof, deadlines, and advisor questions.", "irs-notice-response-packet", "irs-notice-response-packet", "IRS-Notice-Response-Packet.docx", [
+    ["Notice facts", ["Notice number", "Tax year or period", "Date on notice", "Response deadline"]],
+    ["Documents to attach", ["All notice pages", "IRS transcript or account screenshot", "Payment proof", "Prior correspondence"]],
+    ["Client notes", ["What you believe changed", "Payments already made", "Deadlines or calls already scheduled", "Questions for Shona/Jay"]],
+    ["Before you act", ["Do not ignore the deadline", "Do not send a response without team review", "Keep copies of anything mailed or uploaded"]]
+  ]),
+  generatedXlsx("Estimated Tax 30-Day Review Worksheet", "Worksheet for gathering profit, withholding, distributions, and changes before a quarterly estimate review.", "estimated-tax-30-day-kit", "estimated-tax-30-day-review-kit", "Estimated-Tax-30-Day-Review-Worksheet.xlsx", ["Area", "Current Amount", "Prior Quarter Amount", "Changed Since Last Review", "Support Attached", "Question for Team"]),
+  generatedDocx("Real Estate Strategy Intake Packet", "Intake packet for cost segregation, short-term rental, and real estate professional review facts.", "real-estate-strategy-intake-packet", "cost-seg-str-real-estate-professional-intake-packet", "Real-Estate-Strategy-Intake-Packet.docx", [
+    ["Property facts", ["Property address", "Placed-in-service date", "Purchase price and allocation", "Short-term rental days"]],
+    ["Activity support", ["Owner hours by activity", "Management logs", "Guest/rental records", "Material participation notes"]],
+    ["Depreciation support", ["Closing statement", "Prior depreciation schedule", "Cost segregation report if available", "Improvement invoices"]],
+    ["Before you act", ["Confirm current-year limits", "Ask the team to review loss, basis, and participation facts", "Coordinate with state and filing-position review"]]
+  ]),
+  generatedXlsx("Home Office Monthly Reimbursement Worksheet", "Monthly worksheet for home office expense support and reimbursement review.", "home-office-reimbursement-worksheet", "home-office-monthly-reimbursement-worksheet", "Home-Office-Monthly-Reimbursement-Worksheet.xlsx", ["Month", "Business Square Feet", "Total Square Feet", "Expense Category", "Total Expense", "Business Portion", "Receipt Attached", "Notes"]),
   generatedDocx("Worker Classification Checklist", "Fact checklist before paying a worker as contractor or employee.", "worker-classification-intake-checklist", "worker-classification-intake-checklist", "Worker-Classification-Checklist.docx", [
     ["Worker facts", ["Worker name", "Services provided", "Start date", "Expected duration"]],
     ["Behavioral control", ["Who directs the work", "Required hours", "Training provided", "Tools and methods controlled"]],
     ["Financial control", ["Who provides tools", "Opportunity for profit or loss", "Flat fee or hourly", "Invoices and business entity details"]],
     ["Relationship", ["Written agreement", "Benefits", "Ongoing or project-based work", "Before payment, ask the team to review close calls"]]
+  ]),
+  ...playbookWorksheets([
+    ["1099 Income Flow Into Your Business", "1099-business-flow", "1099-income-flow-into-your-business"],
+    ["Accountable Plan Reimbursements", "accountable-plan-system", "accountable-plan-reimbursements"],
+    ["Audit Defense Documentation", "audit-defense-documentation", "audit-defense-documentation"],
+    ["Augusta Rule Meeting Calendar and Rate Planning", "augusta-calendar-rate-planning", "augusta-rule-meeting-calendar-and-rate-planning"],
+    ["Augusta Rule Payment Cadence", "augusta-payment-cadence", "augusta-rule-payment-cadence"],
+    ["Basis Tracking for Real Estate, Inheritance, and Entity Owners", "basis-tracking-system", "basis-tracking-for-real-estate-inheritance-and-entity-owners"],
+    ["Business Intention Framework", "business-intention", "business-intention-framework"],
+    ["Business Losses, At-Risk Limits, Passive Losses, and NOLs", "business-loss-limits", "business-losses-at-risk-limits-passive-losses-and-nols"],
+    ["Business Owner Tax Mindset", "business-owner-tax-mindset", "business-owner-tax-mindset"],
+    ["Estimated Tax Payment System", "estimated-tax-system", "estimated-tax-payment-system"],
+    ["HSA / Medical Deduction Decision Tree", "hsa-medical-decision-tree", "hsa-medical-deduction-decision-tree"],
+    ["Health Insurance Before Medicare", "health-insurance-before-medicare", "health-insurance-before-medicare"],
+    ["Home Office Monthly Reimbursement Cadence", "home-office-monthly-cadence", "home-office-monthly-reimbursement-cadence"],
+    ["IRS Account, Transcript, Notice, and Refund Workflow", "irs-account-notice-workflow", "irs-account-transcript-notice-and-refund-workflow"],
+    ["Inheritance, Basis, and Future Tax Planning", "inheritance-basis-planning", "inheritance-basis-and-future-tax-planning"],
+    ["Medical Expense Deduction Paths", "medical-expense-paths", "medical-expense-deduction-paths"],
+    ["Ministerial Housing Allowance Review", "ministerial-housing-allowance", "ministerial-housing-allowance-review"],
+    ["Missing Refunds and IRS Account Review", "missing-refunds-irs-account", "missing-refunds-and-irs-account-review"],
+    ["Mixed-Purpose Travel Decision Framework", "mixed-purpose-travel", "mixed-purpose-travel-decision-framework"],
+    ["Planning Roadmap and Vault Review", "tax-plan-vault-roadmap", "personalized-tax-plan-and-vault-roadmap", "planning-roadmap-and-vault-review"],
+    ["QBI Deduction Basics and 2026 Watchpoint", "qbi-deduction-review", "qbi-deduction-basics-and-2026-watchpoint"],
+    ["Receipt Management and Monthly Books", "receipt-management", "receipt-management-and-monthly-books"],
+    ["Retirement Withdrawal Tax Buckets", "retirement-tax-buckets", "retirement-withdrawal-tax-buckets"],
+    ["Roth Conversion and Backdoor Roth Review", "roth-conversion-review", "roth-conversion-and-backdoor-roth-review"],
+    ["S-Corp Owner Payroll / Reasonable Compensation", "s-corp-reasonable-compensation", "s-corp-owner-payroll-reasonable-compensation"],
+    ["Schedule C to Entity Transition", "schedule-c-to-entity", "schedule-c-to-entity-transition"],
+    ["Social Security and Retirement Income Tax Planning", "social-security-retirement-tax-planning", "social-security-and-retirement-income-tax-planning"],
+    ["Tax Document Intake and Strategy Roadmap", "tax-intake-roadmap", "tax-document-intake-and-strategy-roadmap"],
+    ["Tax Vault File Structure", "tax-vault-file-structure", "tax-vault-file-structure"],
+    ["Worker Classification", "worker-classification-review", "worker-classification"],
+    ["Year-End Strategy Review Checklist", "year-end-strategy-review", "year-end-strategy-review-checklist"]
   ])
 ];
 
@@ -82,10 +131,13 @@ async function main() {
   }
   mkdirSync(generatedDir, { recursive: true });
   const planned = [...existingAssets, ...buildGeneratedAssets()];
-  const missing = planned.filter((item) => !existsSync(item.filePath));
   const slugs = await loadPublishedSlugs();
   const missingSlugs = planned.filter((item) => !slugs.has(item.linkedSlug));
   const existingRows = await loadExistingRows();
+  const uploadable = planned.filter((item) => existsSync(item.filePath) && !existingRows.has(item.r2Key));
+  const existingWithLocal = planned.filter((item) => existsSync(item.filePath) && existingRows.has(item.r2Key));
+  const missingNew = planned.filter((item) => !existsSync(item.filePath) && !existingRows.has(item.r2Key));
+  const skippedExisting = planned.filter((item) => !existsSync(item.filePath) && existingRows.has(item.r2Key));
   console.log(`Mode: ${mode}`);
   console.log(`Planned assets: ${planned.length}`);
   for (const item of planned) {
@@ -94,19 +146,26 @@ async function main() {
     const exists = existingRows.has(item.r2Key) ? "existing-row" : "new-row";
     console.log(`- ${item.title} | ${item.mimeType} | ${page} | ${status} | ${exists}`);
   }
-  if (missing.length) {
-    throw new Error(`Missing local files:\n${missing.map((item) => `- ${item.filePath}`).join("\n")}`);
+  if (skippedExisting.length) {
+    console.log(`Skipping ${skippedExisting.length} existing production asset(s) with missing local source files.`);
+  }
+  if (existingWithLocal.length) {
+    console.log(`Skipping ${existingWithLocal.length} existing production asset(s) with local generated/source files.`);
+  }
+  if (missingNew.length) {
+    throw new Error(`Missing local files for new assets:\n${missingNew.map((item) => `- ${item.filePath}`).join("\n")}`);
   }
   if (missingSlugs.length) {
     throw new Error(`Missing published Learn pages:\n${missingSlugs.map((item) => `- ${item.linkedSlug} (${item.title})`).join("\n")}`);
   }
+  writePlan(planned, existingRows);
   if (mode === "dry-run") {
     console.log("Dry run complete. No R2 or D1 changes were made.");
     return;
   }
   await assertAdminAccess();
   const manifest = { runId, tenantId, createdAt: new Date().toISOString(), assets: [] };
-  for (const item of planned) {
+  for (const item of uploadable) {
     putR2(item);
     upsertAsset(item);
     manifest.assets.push({
@@ -119,9 +178,33 @@ async function main() {
       sha256: hashFile(item.filePath)
     });
   }
+  manifest.verified = verifyImportedAssets(manifest.assets);
   writeFileSync(join(runDir, "download-assets-manifest.json"), JSON.stringify(manifest, null, 2));
   writeFileSync(latestManifest, JSON.stringify(manifest, null, 2));
-  console.log(`Imported ${manifest.assets.length} assets. Manifest: ${latestManifest}`);
+  console.log(`Imported ${manifest.assets.length} new assets. Manifest: ${latestManifest}`);
+}
+
+function writePlan(planned, existingRows) {
+  const plan = {
+    runId,
+    tenantId,
+    createdAt: new Date().toISOString(),
+    mode,
+    assets: planned.map((item) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      filename: item.filename,
+      mimeType: item.mimeType,
+      strategyKey: item.strategyKey,
+      linkedSlug: item.linkedSlug,
+      r2Key: item.r2Key,
+      localFileExists: existsSync(item.filePath),
+      productionRowExists: existingRows.has(item.r2Key)
+    }))
+  };
+  writeFileSync(join(runDir, "download-assets-plan.json"), JSON.stringify(plan, null, 2));
+  writeFileSync(latestPlan, JSON.stringify(plan, null, 2));
 }
 
 function asset(title, description, strategyKey, linkedSlug, relativePath) {
@@ -136,6 +219,22 @@ function generatedDocx(title, description, strategyKey, linkedSlug, filename, se
 
 function generatedXlsx(title, description, strategyKey, linkedSlug, filename, headers) {
   return { kind: "xlsx", title, description, strategyKey, linkedSlug, filename, headers };
+}
+
+function playbookWorksheets(items) {
+  return items.map(([title, strategyKey, linkedSlug, filenameSlug = linkedSlug]) => generatedDocx(
+    `${title} Implementation Worksheet`,
+    "Client fact-gathering worksheet and advisor review checklist for the related wiki lesson.",
+    strategyKey,
+    linkedSlug,
+    `${filenameSlug}-implementation-worksheet.docx`,
+    [
+      ["Client facts", ["Client name", "Tax year", "Entity type and state", "Strategy goal or question", "Dollar amounts, dates, accounts, people, or properties involved"]],
+      ["Records to attach", ["Documents listed in the related wiki lesson", "Receipts, statements, agreements, notices, logs, forms, or screenshots that support the facts", "Notes explaining any missing or uncertain records"]],
+      ["Implementation notes", ["Best-fit and not-a-fit bullets reviewed", "Current-year federal, state, payroll, entity, or filing caveats identified", "Open decisions or unclear facts listed for Shona/Jay"]],
+      ["Advisor review gate", ["Do not file, elect, reimburse, run payroll, move money, or claim a deduction from this worksheet alone", "Send the completed worksheet and attachments for Shona/Jay review", "Save the reviewed decision and final support in the tax vault"]]
+    ]
+  ));
 }
 
 function buildGeneratedAssets() {
@@ -164,8 +263,16 @@ function defineAsset(input) {
 }
 
 async function assertAdminAccess() {
+  if (!adminPassword && !adminSessionCookie) {
+    throw new Error("ADMIN_MASTER_PASSWORD or ADMIN_SESSION_COOKIE is required for --apply.");
+  }
   const health = await fetch(`${origin}/api/health`);
   if (!health.ok) throw new Error(`Production health failed: ${health.status}`);
+  if (adminSessionCookie) {
+    const dashboard = await fetch(`${origin}/api/admin/dashboard`, { headers: { Cookie: adminSessionCookie } });
+    if (!dashboard.ok) throw new Error(`Admin dashboard preflight failed with ADMIN_SESSION_COOKIE: ${dashboard.status}`);
+    return;
+  }
   const auth = await fetch(`${origin}/api/auth/admin-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -219,6 +326,45 @@ function upsertAsset(item) {
   d1Json(sql);
 }
 
+function verifyImportedAssets(items) {
+  const verified = [];
+  for (const item of items) {
+    const row = assetRowByKey(item.r2Key);
+    if (!row) {
+      throw new Error(`Imported asset is missing its production D1 row: ${item.title}`);
+    }
+    if (row.id !== item.id || row.title !== item.title || row.linked_slug !== item.linkedSlug || row.strategy_key !== item.strategyKey || row.status !== "published") {
+      throw new Error(`Imported asset metadata mismatch for ${item.title}`);
+    }
+    const remoteHash = r2ObjectHash(item.r2Key);
+    if (remoteHash !== item.sha256) {
+      throw new Error(`Imported asset hash mismatch for ${item.title}: expected ${item.sha256}, found ${remoteHash}`);
+    }
+    verified.push({ id: item.id, title: item.title, r2Key: item.r2Key, sha256: remoteHash });
+  }
+  return verified;
+}
+
+function assetRowByKey(r2Key) {
+  return d1Json(`
+    SELECT id, title, linked_slug, strategy_key, status, r2_key
+    FROM download_assets
+    WHERE tenant_id=${q(tenantId)} AND r2_key=${q(r2Key)}
+    LIMIT 1
+  `)[0] || null;
+}
+
+function r2ObjectHash(r2Key) {
+  const tempDir = makeTempDir("asset-verify");
+  const filePath = join(tempDir, basename(r2Key));
+  try {
+    wrangler(["r2", "object", "get", `${bucket}/${r2Key}`, "--remote", "--file", filePath]);
+    return hashFile(filePath);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 function rollback() {
   if (!existsSync(latestManifest)) throw new Error(`No manifest found at ${latestManifest}`);
   const manifest = JSON.parse(readFileSync(latestManifest, "utf8"));
@@ -233,7 +379,37 @@ function rollback() {
   if (ids) {
     d1Json(`DELETE FROM download_assets WHERE tenant_id='${tenantId}' AND id IN (${ids})`);
   }
+  verifyRolledBackAssets(manifest.assets || []);
   console.log(`Rolled back ${(manifest.assets || []).length} assets from ${latestManifest}`);
+}
+
+function verifyRolledBackAssets(items) {
+  for (const item of items) {
+    const row = assetRowByKey(item.r2Key);
+    if (row) {
+      throw new Error(`Rolled-back asset still has a production D1 row: ${item.title}`);
+    }
+    if (r2ObjectExists(item.r2Key)) {
+      throw new Error(`Rolled-back asset still exists in production R2: ${item.title}`);
+    }
+  }
+}
+
+function r2ObjectExists(r2Key) {
+  const tempDir = makeTempDir("asset-rollback-verify");
+  const filePath = join(tempDir, basename(r2Key));
+  try {
+    execFileSync("npx", ["wrangler", "r2", "object", "get", `${bucket}/${r2Key}`, "--remote", "--file", filePath], {
+      cwd: root,
+      env: process.env,
+      stdio: "ignore"
+    });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 }
 
 function writeDocx(filePath, title, sections) {

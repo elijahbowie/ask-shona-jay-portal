@@ -1,6 +1,20 @@
 import { createId, nowIso } from "./crypto";
 import { all, recordAuditEvent, run, tenantId } from "./db";
 
+const PLAYBOOK_SECTION_GROUPS: Array<[string, string[]]> = [
+  ["applicability", ["Best Fit", "Who This Applies To", "Who This Is For", "Who this strategy applies to"]],
+  ["non-fit guidance", ["When This Is Not A Fit", "Who This Is Not For", "Who should not implement without review"]],
+  ["implementation workflow", ["Implementation Steps", "Step-By-Step Implementation Notes", "Step-by-step implementation workflow"]],
+  ["records", ["Documentation File", "Documents To Gather", "Required documents and records"]],
+  ["timing", ["Operating Rhythm", "Timing", "Deadlines", "Timing and deadlines"]],
+  ["caveats", ["Stop Before You", "Freshness Review", "Entity/payroll/state/federal/current-year caveats"]],
+  ["common mistakes", ["Common Mistakes"]],
+  ["review gate", ["Team Handoff", "Escalation Triggers", "Advisor review gates", "Before You Act"]],
+  ["completion checklist", ["Completion Checklist", "Next Actions", "Setup Checklist"]],
+  ["downloads", ["Related Downloads", "Downloads", "Templates", "Worksheets"]],
+  ["before-you-act language", ["Before You Act", "Preview Boundary", "Before you act"]]
+];
+
 export async function runHealthChecks(env: Env): Promise<number> {
   const now = nowIso();
   let created = 0;
@@ -92,6 +106,13 @@ export async function runHealthChecks(env: Env): Promise<number> {
     }
   }
 
+  const playbookGaps = await implementationPlaybookGaps(env);
+  for (const gap of playbookGaps) {
+    if (await createFinding(env, gap.severity, gap.category, gap.title, gap.detail, gap.target)) {
+      created += 1;
+    }
+  }
+
   await recordAuditEvent(env, {
     actor: "system",
     action: "health.run",
@@ -101,6 +122,77 @@ export async function runHealthChecks(env: Env): Promise<number> {
     at: now
   });
   return created;
+}
+
+async function implementationPlaybookGaps(env: Env): Promise<Array<{ severity: string; category: string; title: string; detail: string; target: string }>> {
+  const pages = await all<any>(
+    env,
+    `SELECT w.id, w.title, w.slug, w.compiled_r2_key, COUNT(a.id) AS asset_count
+     FROM wiki_pages w
+     LEFT JOIN download_assets a ON a.tenant_id = w.tenant_id
+       AND a.linked_slug = w.slug
+       AND a.status = 'published'
+     WHERE w.tenant_id = ? AND w.status = 'published'
+     GROUP BY w.id
+     ORDER BY w.title`,
+    tenantId()
+  );
+  const gaps: Array<{ severity: string; category: string; title: string; detail: string; target: string }> = [];
+  for (const page of pages) {
+    if (Number(page.asset_count) === 0) {
+      gaps.push({
+        severity: "medium",
+        category: "missing_download_asset",
+        title: `Missing download asset: ${page.title}`,
+        detail: "Published wiki pages should have a related worksheet, checklist, template, or packet attached.",
+        target: page.slug
+      });
+    }
+    if (!page.compiled_r2_key) {
+      gaps.push({
+        severity: "high",
+        category: "implementation_playbook_gap",
+        title: `Missing compiled content: ${page.title}`,
+        detail: "Published wiki page has no compiled markdown key to inspect for implementation-readiness.",
+        target: page.slug
+      });
+      continue;
+    }
+    const object = await env.CONTENT_BUCKET.get(page.compiled_r2_key);
+    if (!object) {
+      gaps.push({
+        severity: "high",
+        category: "implementation_playbook_gap",
+        title: `Missing compiled content: ${page.title}`,
+        detail: "Published wiki page compiled markdown is missing from R2.",
+        target: page.slug
+      });
+      continue;
+    }
+    const markdown = await object.text();
+    const headings = headingsFromMarkdown(markdown);
+    const missingSections = PLAYBOOK_SECTION_GROUPS
+      .filter(([, aliases]) => !hasAnyHeading(headings, aliases))
+      .map(([label]) => label);
+    if (missingSections.length > 0) {
+      gaps.push({
+        severity: "medium",
+        category: "implementation_playbook_gap",
+        title: `Implementation playbook gap: ${page.title}`,
+        detail: `Missing implementation section(s): ${missingSections.join(", ")}.`,
+        target: page.slug
+      });
+    }
+  }
+  return gaps;
+}
+
+function headingsFromMarkdown(markdown: string): string[] {
+  return [...markdown.matchAll(/^#{2,4}\s+(.+)$/gm)].map((match) => match[1].replace(/\s+#*$/g, "").trim().toLowerCase());
+}
+
+function hasAnyHeading(headings: string[], aliases: string[]): boolean {
+  return headings.some((heading) => aliases.some((alias) => heading.includes(alias.toLowerCase())));
 }
 
 async function createFinding(env: Env, severity: string, category: string, title: string, detail: string, target: string): Promise<boolean> {

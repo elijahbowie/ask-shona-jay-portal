@@ -106,18 +106,22 @@ function App() {
       return;
     }
     const ctx = gsap.context(() => {
+      const motionTargets = gsap.utils.toArray<HTMLElement>(".motion-in");
+      const revealTargets = gsap.utils.toArray<HTMLElement>(".reveal");
       // Entrance — every primary block animates in on route load. Never gated on
       // scroll, so content the user is waiting on (e.g. an answer) is never gated
       // behind a scroll (it fades in on mount rather than waiting for a ScrollTrigger).
-      gsap.fromTo(
-        ".motion-in",
-        { y: 18, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "power3.out" }
-      );
+      if (motionTargets.length) {
+        gsap.fromTo(
+          motionTargets,
+          { y: 18, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "power3.out" }
+        );
+      }
 
       // Scroll-linked reveals — opt-in, for stable decorative lists below the fold.
       // ScrollTrigger fires immediately for items already in view, on scroll otherwise.
-      gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
+      revealTargets.forEach((el) => {
         gsap.from(el, {
           y: 26,
           opacity: 0,
@@ -339,7 +343,7 @@ function TopNav({
   const clientItems = [
     ["/ask", "Ask", <Sparkle size={17} weight="light" />],
     ["/learn", "Learn", <BookOpenText size={17} weight="light" />],
-    ["/my-plan", "Plan", <ListChecks size={17} weight="light" />],
+    ["/my-plan", "Checklist", <ListChecks size={17} weight="light" />],
     ["/more", "Account", <UserCircle size={17} weight="light" />]
   ] as const;
   const adminItems = [
@@ -378,7 +382,7 @@ function BottomNav({ path, navigate }: { path: string; navigate: (path: string) 
   const items = [
     ["/ask", "Ask", <Sparkle size={22} weight="light" />],
     ["/learn", "Learn", <BookOpenText size={22} weight="light" />],
-    ["/my-plan", "Plan", <ListChecks size={22} weight="light" />],
+    ["/my-plan", "Checklist", <ListChecks size={22} weight="light" />],
     ["/more", "Account", <UserCircle size={22} weight="light" />]
   ] as const;
   return (
@@ -412,7 +416,7 @@ function ClientRouter({
   if (path === "/learn" || path === "/trainings") {
     return <TrainingVault navigate={navigate} />;
   }
-  if (path === "/my-plan" || path === "/plan") {
+  if (path === "/my-plan" || path === "/plan" || path === "/checklist") {
     return <PlanView announce={announce} />;
   }
   if (path === "/history") {
@@ -501,10 +505,10 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
   return (
     <section className="page-grid ask-layout">
       <div className="page-intro motion-in">
-        <p className="eyebrow">Ask Advisor</p>
-        <h1>Start with the question you would bring to the call.</h1>
+        <p className="eyebrow">Question intake</p>
+        <h1>Ask with the records in mind.</h1>
         <p>
-          The assistant searches approved education, cites its sources, and asks for team review when the answer depends on your facts.
+          Search approved wiki pages, see the source trail, and know when Shona/Jay need to review the facts before action.
         </p>
         <div className="context-strip">
           <span>{me.client?.name || me.client?.email || "Client"}</span>
@@ -563,7 +567,7 @@ function WelcomePrompt({ me, prompts, onPick }: { me: AppMe; prompts: string[]; 
       <div>
         <span className="mini-label">Welcome back</span>
         <h2>{me.client?.name || "Beyond Freedom client"}</h2>
-        <p>{friendlyEntity(me.client?.entityType)} guidance with {me.client?.tier || "active"} access.</p>
+        <p>{friendlyEntity(me.client?.entityType)} context with {me.client?.tier || "active"} access.</p>
       </div>
       <div className="prompt-cards">
         {prompts.slice(0, 3).map((prompt) => (
@@ -678,7 +682,7 @@ function DeadlineBanner({ deadline, onUse }: { deadline: { label: string; days: 
       <div>
         <span className="mini-label">Next tax moment</span>
         <h2>{deadline.label}</h2>
-        <p>{deadline.days} days away. Start with a readiness question before the week gets loud.</p>
+        <p>{deadline.days} days away. Gather payment, income, and payroll changes before estimates are due.</p>
       </div>
       <button onClick={onUse}>Ask about this</button>
     </article>
@@ -694,12 +698,12 @@ function ReadinessCard({ score }: { score: number }) {
         <span>ready</span>
       </div>
       <div>
-        <h2>Tax readiness</h2>
-        <p>{score >= 75 ? "Your profile has helpful context. Keep documentation current." : "A few facts would make answers more useful."}</p>
+        <h2>Planning readiness signal</h2>
+        <p>{score >= 75 ? "Your profile has helpful context. This is not a tax-savings calculator or personalized tax plan." : "A few facts would make answers more useful. This is not a personalized tax plan."}</p>
         <button className="text-button" onClick={() => setOpen((value) => !value)}>{open ? "Hide details" : "Why this score?"}</button>
       </div>
       {open ? (
-        <p className="readiness-detail">Score reflects portal profile context, completed plan items, and recent use of cited answers. It is a planning signal, not a qualification decision.</p>
+        <p className="readiness-detail">Score reflects portal profile context, completed checklist items, and recent use of cited answers. It is a planning-readiness signal only, not personalized tax advice or a qualification decision.</p>
       ) : null}
     </article>
   );
@@ -712,7 +716,7 @@ function MemoryCard({ history }: { history: ConversationEntry[] }) {
       <div>
         <span className="mini-label">Conversation memory</span>
         <h2>{history.length ? `${history.length} saved questions` : "No saved questions yet"}</h2>
-        <p>The portal remembers recent questions on this device so follow-ups stay easy.</p>
+        <p>Recent questions stay on this device so follow-ups keep their context.</p>
       </div>
     </article>
   );
@@ -928,8 +932,8 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
     <section className="content-page">
       <div className="page-intro motion-in">
         <p className="eyebrow">Learn</p>
-        <h1>Beyond Freedom strategy library.</h1>
-        <p>Search official strategy lessons, implementation steps, checklists, and client action plans.</p>
+        <h1>Strategy library and implementation packets.</h1>
+        <p>Find the lesson, worksheet, checklist, or review gate tied to the strategy you are working on.</p>
       </div>
       {continueReading ? (
         <button className="continue-card motion-in" onClick={() => navigate(`/learn/${continueReading.slug}`)}>
@@ -944,8 +948,8 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
       {recommended.length ? (
         <section className="recommended-band motion-in">
           <div>
-            <span className="mini-label">Recommended for you</span>
-            <h2>Start with the pages and kits tied to your profile.</h2>
+            <span className="mini-label">Profile-start pages</span>
+            <h2>Open the kits most likely to need records first.</h2>
           </div>
           <div className="recommended-grid">
             {recommended.slice(0, 4).map((item) => (
@@ -1050,6 +1054,7 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
   }
 
   const related = allPages.filter((item) => item.slug !== page.slug && categoryFor(item.strategyKey) === categoryFor(page.strategyKey)).slice(0, 3);
+  const readerMarkdown = stripReaderIntro(page.markdown || page.summary, page.title, page.summary);
 
   return (
     <article className="reader-page motion-in">
@@ -1066,7 +1071,7 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
         <p>{page.summary}</p>
       </section>
       <DownloadsSection assets={assets} />
-      <div className="reader-body" dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(page.markdown || page.summary) }} />
+      <div className="reader-body" dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(readerMarkdown) }} />
       {related.length ? (
         <section className="related-pages">
           <h2>Related pages</h2>
@@ -1079,6 +1084,36 @@ function TrainingDetail({ slug, navigate, announce }: { slug: string; navigate: 
       ) : null}
     </article>
   );
+}
+
+function stripReaderIntro(markdown: string, title: string, summary: string): string {
+  const lines = markdown.trimStart().split("\n");
+  let removedTitle = false;
+  if (lines[0]?.match(/^#\s+/) && comparableText(lines[0].replace(/^#\s+/, "")) === comparableText(title)) {
+    lines.shift();
+    while (lines[0] === "") lines.shift();
+    removedTitle = true;
+  }
+  if (!removedTitle) {
+    return markdown;
+  }
+  const remaining = lines.join("\n");
+  const paragraphs = remaining.split(/\n{2,}/);
+  const first = paragraphs[0] || "";
+  const firstText = comparableText(first);
+  const summaryText = comparableText(summary).slice(0, 180);
+  if (firstText && summaryText && (firstText.startsWith(summaryText) || summaryText.startsWith(firstText.slice(0, 120)))) {
+    return paragraphs.slice(1).join("\n\n").trimStart();
+  }
+  return remaining;
+}
+
+function comparableText(value: string): string {
+  return value
+    .replace(/[#*_`[\]()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 async function triggerDownload(url: string, filename: string): Promise<void> {
@@ -1115,7 +1150,7 @@ function DownloadsSection({ assets }: { assets: DownloadAsset[] }) {
     <section className="downloads-panel motion-in" aria-label="Downloads">
       <div>
         <span className="mini-label">Downloads</span>
-        <h2>Use these while you work through the lesson.</h2>
+        <h2>Download the worksheet before acting.</h2>
       </div>
       <div className="download-grid">
         {assets.map((asset) => (
@@ -1166,14 +1201,14 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
   return (
     <section className="content-page plan-page">
       <div className="page-intro motion-in">
-        <p className="eyebrow">My Plan</p>
-        <h1>A focused checklist from your profile.</h1>
-        <p>Check off what you have gathered. When something affects payroll, tax filings, or how your business is set up, check with Shona/Jay before you act.</p>
+        <p className="eyebrow">Starter Checklist</p>
+        <h1>Gather records before review.</h1>
+        <p>This is not your personalized tax plan from Shona/Jay. Use it to gather records and open the right lessons; when something affects payroll, tax filings, or how your business is set up, check with Shona/Jay before you act.</p>
       </div>
       <div className="plan-summary motion-in">
         <Gauge size={28} weight="light" />
         <div>
-          <span className="mini-label">Progress</span>
+          <span className="mini-label">Checklist progress</span>
           <h2>{complete} of {items.length} complete</h2>
         </div>
         <strong>{percent}%</strong>
@@ -1200,7 +1235,7 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
       {items.length > 0 && complete === items.length ? (
         <div className="completion-card motion-in">
           <CheckCircle size={24} weight="fill" />
-          <span>Your starter plan is complete. Bring final implementation questions to Shona/Jay.</span>
+          <span>Your starter checklist is complete. Bring personalized tax-plan questions to Shona/Jay.</span>
         </div>
       ) : null}
     </section>
@@ -1235,7 +1270,7 @@ function MoreView({ me, navigate, logout }: { me: AppMe; navigate: (path: string
       <div className="quick-actions motion-in">
         <button onClick={() => navigate("/history")}><ClockCounterClockwise size={20} weight="light" /> History <span>{saved.length}</span></button>
         <button onClick={() => navigate("/learn")}><BookOpenText size={20} weight="light" /> Learn library</button>
-        <button onClick={() => navigate("/my-plan")}><ListChecks size={20} weight="light" /> My Plan</button>
+        <button onClick={() => navigate("/my-plan")}><ListChecks size={20} weight="light" /> Starter checklist</button>
         <button onClick={logout}><SignOut size={20} weight="light" /> Sign out</button>
       </div>
     </section>
@@ -1489,6 +1524,7 @@ function AdminHealth() {
 function AdminAssets() {
   const [assets, setAssets] = useState<DownloadAsset[]>([]);
   const [deleting, setDeleting] = useState("");
+  const [downloading, setDownloading] = useState("");
 
   const load = () => api<{ assets: DownloadAsset[] }>("/api/admin/assets").then((data) => setAssets(data.assets));
   useEffect(() => { load(); }, []);
@@ -1504,11 +1540,20 @@ function AdminAssets() {
     }
   };
 
-  const cols = "2fr 1.5fr 1.5fr 5rem";
+  const download = async (asset: DownloadAsset) => {
+    setDownloading(asset.id);
+    try {
+      await triggerDownload(asset.downloadUrl, asset.filename);
+    } finally {
+      setDownloading("");
+    }
+  };
+
+  const cols = "2fr 1.5fr 1.5fr 9rem";
 
   return (
     <section className="admin-page">
-      <AdminHeader title="Download Assets" subtitle="Files served from the import script. Delete to remove from lessons and storage." />
+      <AdminHeader title="Download Assets" subtitle="Files served from the import script. Download to verify, or delete to remove from lessons and storage." />
       {assets.length === 0 ? (
         <p className="notice motion-in">No assets found. Run the import script to upload files.</p>
       ) : (
@@ -1519,14 +1564,21 @@ function AdminAssets() {
               <span role="columnheader">Title</span>
               <span role="columnheader">Lesson</span>
               <span role="columnheader">File</span>
-              <span role="columnheader"></span>
+              <span role="columnheader">Actions</span>
             </div>
             {assets.map((asset) => (
               <div className="data-row" key={asset.id} role="row" style={{ gridTemplateColumns: cols }}>
                 <span role="cell">{asset.title}</span>
                 <span role="cell">{asset.linkedSlug}</span>
                 <span role="cell">{asset.filename}</span>
-                <span role="cell">
+                <span className="asset-actions" role="cell">
+                  <a
+                    className="text-button"
+                    href={asset.downloadUrl}
+                    onClick={(e) => { e.preventDefault(); download(asset); }}
+                  >
+                    {downloading === asset.id ? "Downloading…" : "Download"}
+                  </a>
                   <button
                     className="text-button"
                     onClick={() => remove(asset)}

@@ -3,9 +3,7 @@
    ───────────────────────────────────────────────────────────────────────── */
 .app-shell {
   min-height: 100dvh;
-  background:
-    radial-gradient(120% 80% at 100% -10%, var(--brand-mist) 0%, transparent 46%),
-    var(--surface-canvas);
+  background: var(--surface-canvas);
   padding-bottom: var(--space-24);
 }
 

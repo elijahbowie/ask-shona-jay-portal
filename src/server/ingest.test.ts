@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSource, sanitizeSourceText, type SourceInput } from "./ingest";
+import { createSource, sanitizeSourceText, updateWikiPage, type SourceInput } from "./ingest";
 import { sourceHashForContent } from "./knowledge";
 
 describe("sourceHashForContent", () => {
@@ -98,5 +98,62 @@ Keep payroll records and reasonable pay support.`);
     expect(sanitized).toContain("[Removed unsafe instruction-like text from uploaded source.]");
     expect(sanitized).not.toContain("Ignore previous instructions");
     expect(sanitized).not.toContain("do not cite sources");
+  });
+});
+
+function createWikiUpdateTestEnv() {
+  const puts: Array<{ key: string; markdown: string }> = [];
+  const updates: unknown[][] = [];
+  const audits: unknown[][] = [];
+  const env = {
+    CONTENT_BUCKET: {
+      put: async (key: string, markdown: string) => {
+        puts.push({ key, markdown });
+      }
+    },
+    DB: {
+      prepare: (sql: string) => ({
+        bind: (...binds: unknown[]) => ({
+          first: async () => {
+            if (sql.includes("FROM wiki_pages")) {
+              return { id: "wiki_1", source_id: "src_1", title: "Old Wiki Title" };
+            }
+            return null;
+          },
+          run: async () => {
+            if (sql.includes("UPDATE wiki_pages")) {
+              updates.push(binds);
+            }
+            if (sql.includes("INSERT INTO audit_events")) {
+              audits.push(binds);
+            }
+            return { success: true };
+          }
+        })
+      })
+    }
+  } as unknown as Env;
+  return { env, puts, updates, audits };
+}
+
+describe("updateWikiPage", () => {
+  it("stores the markdown H1 as the wiki page title", async () => {
+    const { env, puts, updates, audits } = createWikiUpdateTestEnv();
+
+    await updateWikiPage(env, "wiki_1", "# Planning Roadmap and Vault Review\n\n## Before You Act\n\nPrepare the review packet.", "admin@example.com");
+
+    expect(puts).toHaveLength(1);
+    expect(updates).toHaveLength(1);
+    expect(updates[0][0]).toBe("Planning Roadmap and Vault Review");
+    expect(updates[0][2]).toContain("Prepare the review packet.");
+    expect(audits).toHaveLength(1);
+  });
+
+  it("keeps the existing title when markdown has no H1", async () => {
+    const { env, updates } = createWikiUpdateTestEnv();
+
+    await updateWikiPage(env, "wiki_1", "## Before You Act\n\nPrepare the review packet.", "admin@example.com");
+
+    expect(updates[0][0]).toBe("Old Wiki Title");
   });
 });

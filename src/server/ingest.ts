@@ -214,9 +214,11 @@ export async function updateWikiPage(env: Env, wikiId: string, markdown: string,
   const hash = await sha256(markdown);
   const key = `compiled/pages/${tenantId()}/${wikiId}/${hash}.md`;
   await env.CONTENT_BUCKET.put(key, markdown, { httpMetadata: { contentType: "text/markdown; charset=utf-8" } });
+  const title = titleFromMarkdown(markdown) || page.title;
   await run(
     env,
-    "UPDATE wiki_pages SET compiled_r2_key = ?, summary = ?, status = ?, version_hash = ?, updated_at = ? WHERE id = ?",
+    "UPDATE wiki_pages SET title = ?, compiled_r2_key = ?, summary = ?, status = ?, version_hash = ?, updated_at = ? WHERE id = ?",
+    title,
     key,
     summarize(markdown),
     "approved",
@@ -326,6 +328,12 @@ function summarize(text: string): string {
     .replace(/\s+/g, " ")
     .trim();
   return plain.slice(0, 260);
+}
+
+function titleFromMarkdown(markdown: string): string | null {
+  const match = markdown.match(/^#\s+(.+)$/m);
+  const title = match?.[1]?.replace(/\s+#*$/g, "").trim();
+  return title || null;
 }
 
 function slugify(input: string): string {

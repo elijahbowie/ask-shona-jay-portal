@@ -26,10 +26,20 @@
     "seed:transcripts:apply": "node scripts/seed-transcript-knowledge.mjs --apply",
     "seed:transcripts:validate": "node scripts/seed-transcript-knowledge.mjs --validate",
     "seed:transcripts:rollback": "node scripts/seed-transcript-knowledge.mjs --rollback",
+    "wiki:playbook:audit": "node scripts/wiki-implementation-playbook-audit.mjs --audit",
+    "wiki:playbook:prepare": "node scripts/wiki-implementation-playbook-audit.mjs --prepare-upgrades",
+    "wiki:playbook:verify": "node scripts/wiki-implementation-playbook-audit.mjs --verify-preapply",
+    "wiki:playbook:write-docs": "node scripts/wiki-implementation-playbook-audit.mjs --write-docs",
+    "wiki:playbook:preflight": "node scripts/import-download-assets.mjs && node scripts/wiki-implementation-playbook-audit.mjs --prepare-upgrades && node scripts/wiki-implementation-playbook-audit.mjs --verify-preapply && node scripts/wiki-implementation-playbook-audit.mjs --write-docs",
+    "wiki:playbook:apply-assets:production": "node scripts/import-download-assets.mjs --apply",
+    "wiki:playbook:rollback-assets:production": "node scripts/import-download-assets.mjs --rollback",
+    "wiki:playbook:apply-pages:production": "node scripts/wiki-implementation-playbook-audit.mjs --apply-upgrades",
+    "wiki:playbook:rollback-pages:production": "node scripts/wiki-implementation-playbook-audit.mjs --rollback-upgrades",
+    "wiki:playbook:verify-production": "node scripts/wiki-implementation-playbook-audit.mjs --verify-production",
     "secrets:check": "node scripts/production-secrets.mjs --check",
     "secrets:push": "node scripts/production-secrets.mjs --push",
-    "deploy:dry-run": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy"
+    "deploy:dry-run": "npm run build && wrangler deploy --dry-run --env production",
+    "deploy": "npm run build && wrangler deploy --env production"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.13.6",

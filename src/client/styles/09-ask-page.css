@@ -4,7 +4,7 @@
 .ask-layout {
   max-width: var(--content-wide);
   margin: 0 auto;
-  padding: var(--space-10) var(--gutter-page) var(--space-12);
+  padding: var(--space-8) var(--gutter-page) var(--space-12);
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-6);
@@ -13,7 +13,7 @@
 
 @media (min-width: 980px) {
   .ask-layout {
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     grid-template-areas:
       "intro intro"
       "panel side"
@@ -62,22 +62,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-6);
+  padding: var(--space-5);
   border-radius: var(--radius-xl);
   background: var(--surface-canvas);
   border: 1px solid var(--surface-line);
-  box-shadow: var(--elev-2);
+  box-shadow: none;
 }
 
 .welcome-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  padding: var(--space-6);
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
-  background:
-    radial-gradient(120% 120% at 100% 0%, rgba(52, 152, 219, 0.16) 0%, transparent 60%),
-    var(--brand-navy-deep);
+  background: var(--brand-navy-deep);
   color: var(--ink-on-brand);
 }
 
@@ -104,8 +102,8 @@
   text-align: left;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--ink-on-brand);
   font-size: 14px;
   line-height: 1.4;
@@ -125,10 +123,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  border: 1px solid var(--surface-line);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--surface-line);
+  border-bottom: 1px solid var(--surface-line);
 }
 
 .builder-tabs {
@@ -173,10 +170,13 @@
 
 .builder-prompts button {
   text-align: left;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--surface-canvas);
-  border: 1px solid var(--surface-line);
+  padding: var(--space-3) 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--surface-line);
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
   color: var(--ink-primary);
   font-size: 14px;
   line-height: 1.45;
@@ -187,8 +187,8 @@
 }
 
 .builder-prompts button:hover {
-  border-color: var(--brand-sky);
-  box-shadow: var(--elev-1);
+  border-color: var(--brand-sky-soft);
+  box-shadow: none;
   transform: translateX(3px);
 }
 
@@ -302,12 +302,12 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--surface-line);
   background: var(--surface-canvas);
-  box-shadow: var(--elev-1);
+  box-shadow: none;
 }
 
 .deadline-card {
-  background: linear-gradient(150deg, var(--brand-mist) 0%, var(--surface-canvas) 70%);
-  border-color: var(--brand-sky-soft);
+  background: var(--surface-canvas);
+  border-color: var(--surface-line);
   color: var(--brand-sky-strong);
 }
 
