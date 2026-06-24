@@ -1,0 +1,405 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wiki Playbook Sweep — Scorecard</title>
+<style>
+:root{--navy:#001532;--sky:#15679f;--ink:#001532;--ink2:#3c4a63;--ink3:#5f6b85;--line:#e1e8f1;--raised:#f7f9fc;--sunk:#eef2f8;--mist:#e8f2fb;--ok:#0a6b50;--ok-soft:#e0f4ee;--warn:#8a5200;--warn-soft:#fbf1dc;--font:'DM Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;--disp:'Montserrat',var(--font)}
+*{box-sizing:border-box;margin:0}body{font-family:var(--font);color:var(--ink2);line-height:1.6;background:#fff}
+.wrap{max-width:1000px;margin:0 auto;padding:clamp(24px,5vw,56px) clamp(20px,4vw,40px) 96px}
+h1,h2,h3{font-family:var(--disp);color:var(--ink);letter-spacing:-.015em;line-height:1.2}
+header.hero{background:linear-gradient(155deg,var(--navy),#00284a);color:#fff;border-radius:18px;padding:clamp(28px,5vw,48px);position:relative;overflow:hidden;margin-bottom:40px}
+header.hero::after{content:'';position:absolute;right:-100px;bottom:-120px;width:340px;height:340px;border-radius:999px;border:1px solid rgba(52,152,219,.35);box-shadow:inset 0 0 0 24px rgba(52,152,219,.08)}
+.pill{display:inline-block;font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#fff;margin-bottom:16px}
+header.hero h1{color:#fff;font-size:clamp(26px,4vw,40px);max-width:20ch}
+header.hero p{color:rgba(255,255,255,.78);max-width:64ch;margin-top:12px;position:relative;z-index:1}
+.verdict{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px;position:relative;z-index:1}
+.chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:14px 18px;min-width:120px}
+.chip b{font-family:var(--disp);font-size:30px;color:#fff;display:block;line-height:1}.chip.up b{color:#7ee3bd}
+.chip span{font-size:11px;color:rgba(255,255,255,.66);text-transform:uppercase;letter-spacing:.06em}
+section{margin-bottom:40px}.eyebrow{font-family:var(--disp);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sky);margin-bottom:8px}
+h2.sec{font-size:clamp(20px,3vw,26px);margin-bottom:14px}.lede{max-width:70ch;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--disp);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);background:var(--sunk);position:sticky;top:0}
+td.t{font-weight:600;color:var(--ink)}td.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--disp)}
+tr.hi td.n b{color:var(--ok)}tr.mid td.n b{color:var(--sky)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--raised)}.card b{font-family:var(--disp);font-size:26px;color:var(--ink);display:block}
+.card span{font-size:12px;color:var(--ink3)}
+.note{border:1px solid var(--line);border-left:0;background:var(--mist);border-radius:12px;padding:16px 20px;margin-bottom:12px;font-size:14px}
+.note b{font-family:var(--disp);color:var(--ink)}
+ol.steps{margin:0 0 0 18px}ol.steps li{margin-bottom:8px}
+.meta{font-size:13px;color:var(--ink3);border-top:1px solid var(--line);padding-top:20px;margin-top:36px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--sunk);padding:1px 6px;border-radius:5px;color:var(--navy)}
+</style></head><body><div class="wrap">
+<header class="hero"><span class="pill">Beyond Freedom Financial · Knowledge Ops</span>
+<h1>Implementation-playbook sweep: all 56 lessons</h1>
+<p>Every published lesson was researched, authored, adversarially fact-checked against canonical IRS and statutory sources, and revised until it scored above 90 on a 100-point self-containedness rubric. Each page is built to be usable as a complete implementation playbook with its attached downloads, with no outside context required.</p>
+<div class="verdict">
+<div class="chip up"><b>56/56</b><span>Scored &gt; 90</span></div>
+<div class="chip up"><b>94</b><span>Average score</span></div>
+<div class="chip"><b>28</b><span>Scored 95+</span></div>
+<div class="chip"><b>24</b><span>Took revision rounds</span></div>
+</div></header>
+
+<section><div class="eyebrow">How each lesson was held</div><h2 class="sec">The bar, and the gate that enforced it</h2>
+<p class="lede">A lesson could not pass on structure alone. The 100-point rubric weights accuracy at 20 points with a hard gate: a page scoring below 17/20 on verified tax specifics could not reach a passing total, no matter how well organized. Every figure, threshold, deadline, and form number was confirmed against a canonical source (IRS.gov, Treasury, the statute, or an official state DOR) by a reviewer independent of the author. Numbers that no public source could confirm were flagged <code>[confirm with your advisor]</code> rather than invented.</p>
+<div class="cards">
+<div class="card"><b>56</b><span>Lessons</span></div>
+<div class="card"><b>~7,400</b><span>Avg words / playbook</span></div>
+<div class="card"><b>56</b><span>Cite canonical IRS/statute sources</span></div>
+<div class="card"><b>17–20</b><span>Accuracy-gate range met</span></div>
+</div></section>
+
+<section><div class="eyebrow">Scorecard</div><h2 class="sec">Every lesson, scored</h2>
+<p class="lede">Score is out of 100. Accuracy is the verified-tax-specifics subscore (gate ≥ 17/20). Rounds is how many revise-and-re-verify cycles it took to clear 90. Notes is the count of residual reviewer follow-ups (minor citation-tightening items left for advisor sign-off, not blockers).</p>
+<table><thead><tr><th>Lesson</th><th style="text-align:right">Score</th><th style="text-align:right">Accuracy</th><th style="text-align:right">Rounds</th><th style="text-align:right">Notes</th></tr></thead><tbody>
+<tr class="hi">
+    <td class="t">IRS Account, Transcript, Notice, and Refund Workflow</td>
+    <td class="n"><b>99</b></td>
+    <td class="n">20/20</td>
+    <td class="n">0</td>
+    <td class="n">6</td></tr>
+<tr class="hi">
+    <td class="t">Audit Defense Documentation</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">20/20</td>
+    <td class="n">1</td>
+    <td class="n">6</td></tr>
+<tr class="hi">
+    <td class="t">Basis Tracking for Real Estate, Inheritance, and Entity Owners</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">20/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Business Owner Tax Mindset</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">Ministerial Housing Allowance Review</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">5</td></tr>
+<tr class="hi">
+    <td class="t">Receipt Management and Monthly Books</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">S-Corp Owner Payroll / Reasonable Compensation</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">Tax Vault File Structure</td>
+    <td class="n"><b>97</b></td>
+    <td class="n">18/20</td>
+    <td class="n">1</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">Retirement Withdrawal Tax Buckets</td>
+    <td class="n"><b>96</b></td>
+    <td class="n">20/20</td>
+    <td class="n">2</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">Home Office Monthly Reimbursement Cadence</td>
+    <td class="n"><b>96</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">Augusta Rule / 14-Day Rental</td>
+    <td class="n"><b>96</b></td>
+    <td class="n">17/20</td>
+    <td class="n">0</td>
+    <td class="n">6</td></tr>
+<tr class="hi">
+    <td class="t">Augusta Rule Meeting Packet</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">20/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Business Travel Deduction</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">20/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Inheritance, Basis, and Future Tax Planning</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">20/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">LLC to S-Corp Conversion</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">20/20</td>
+    <td class="n">1</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">1099 Income Flow Into Your Business</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">7</td></tr>
+<tr class="hi">
+    <td class="t">Depreciation Strategy</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">10</td></tr>
+<tr class="hi">
+    <td class="t">Meals Deduction</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Missing Refunds and IRS Account Review</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Roth Conversion and Backdoor Roth Review</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Year-End Strategy Review Checklist</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">6</td></tr>
+<tr class="hi">
+    <td class="t">Accountable Plan Monthly Reimbursement Kit</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Business Travel Trip Memo Kit</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">9</td></tr>
+<tr class="hi">
+    <td class="t">Cost Segregation</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">11</td></tr>
+<tr class="hi">
+    <td class="t">Medical Expense Deduction Paths</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Mixed-Purpose Travel Decision Framework</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">6</td></tr>
+<tr class="hi">
+    <td class="t">Personalized Tax Plan and Vault Roadmap</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">18/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="hi">
+    <td class="t">Vehicle Deduction</td>
+    <td class="n"><b>95</b></td>
+    <td class="n">17/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Augusta Rule Meeting Calendar and Rate Planning</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">7</td></tr>
+<tr class="mid">
+    <td class="t">Augusta Rule Payment Cadence</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">9</td></tr>
+<tr class="mid">
+    <td class="t">Business Intention Framework</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Business Losses, At-Risk Limits, Passive Losses, and NOLs</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">7</td></tr>
+<tr class="mid">
+    <td class="t">Home Office Reimbursement</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">IRS Notice Response Packet</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">9</td></tr>
+<tr class="mid">
+    <td class="t">Late S-Corp Election</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">7</td></tr>
+<tr class="mid">
+    <td class="t">Year-End Strategy Closeout Kit</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Cost Seg / STR / Real Estate Professional Intake Packet</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Short-Term Rental Strategy</td>
+    <td class="n"><b>94</b></td>
+    <td class="n">17/20</td>
+    <td class="n">0</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">Accountable Plan Reimbursements</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">19/20</td>
+    <td class="n">0</td>
+    <td class="n">7</td></tr>
+<tr class="mid">
+    <td class="t">Estimated Tax Payment System</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">7</td></tr>
+<tr class="mid">
+    <td class="t">Medical / Health Reimbursement Strategy</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">Tax Document Intake and Strategy Roadmap</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">19/20</td>
+    <td class="n">1</td>
+    <td class="n">9</td></tr>
+<tr class="mid">
+    <td class="t">Estimated Tax 30-Day Review Kit</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">Health Insurance Before Medicare</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">18/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Hiring Your Kids</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Home Office Monthly Reimbursement Worksheet</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">Power of Entities and Asset Protection</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">18/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Worker Classification</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">18/20</td>
+    <td class="n">1</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">Social Security and Retirement Income Tax Planning</td>
+    <td class="n"><b>93</b></td>
+    <td class="n">17/20</td>
+    <td class="n">1</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">Hiring Kids Implementation Kit</td>
+    <td class="n"><b>92</b></td>
+    <td class="n">18/20</td>
+    <td class="n">1</td>
+    <td class="n">9</td></tr>
+<tr class="mid">
+    <td class="t">Real Estate Professional Qualification</td>
+    <td class="n"><b>92</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">QBI Deduction Basics and 2026 Watchpoint</td>
+    <td class="n"><b>91</b></td>
+    <td class="n">18/20</td>
+    <td class="n">0</td>
+    <td class="n">10</td></tr>
+<tr class="mid">
+    <td class="t">HSA / Medical Deduction Decision Tree</td>
+    <td class="n"><b>91</b></td>
+    <td class="n">17/20</td>
+    <td class="n">0</td>
+    <td class="n">9</td></tr>
+<tr class="mid">
+    <td class="t">Schedule C to Entity Transition</td>
+    <td class="n"><b>91</b></td>
+    <td class="n">17/20</td>
+    <td class="n">1</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Vehicle Mileage and Actual Expense Kit</td>
+    <td class="n"><b>91</b></td>
+    <td class="n">17/20</td>
+    <td class="n">0</td>
+    <td class="n">8</td></tr>
+<tr class="mid">
+    <td class="t">Worker Classification Intake Checklist</td>
+    <td class="n"><b>91</b></td>
+    <td class="n">17/20</td>
+    <td class="n">0</td>
+    <td class="n">9</td></tr>
+</tbody></table></section>
+
+<section><div class="eyebrow">What the fact-check caught</div><h2 class="sec">Representative corrections the loop forced</h2>
+<div class="note"><b>1099 Income Flow.</b> First draft asserted the 2026 QBI single-filer phase-in threshold as <code>$201,775</code> (that is actually the married-filing-separately figure). The reviewer caught it against IRS Rev. Proc. 2025-32 §4.26 and the revision corrected it to <code>$201,750</code>, added the SSTB full phase-out tops ($276,750 single / $553,500 MFJ), and replaced practitioner-blog citations with the canonical IRS revenue procedure.</div>
+<div class="note"><b>Form 2553 timing.</b> Draft language "75 days from Jan 1" was corrected to the statutory standard "no more than 2 months and 15 days after the beginning of the tax year" (IRC §1362(b)), keeping March 16, 2026 as the calendar deadline.</div>
+<div class="note"><b>Accountable plan / S-corp health.</b> A bare "$100-per-day excise tax" warning was softened to reflect IRS Notice 2015-17 relief for single 2%-shareholder arrangements, so the page does not overstate risk for the exact scenario it describes.</div>
+</section>
+
+<section><div class="eyebrow">Before this goes live</div><h2 class="sec">What remains</h2>
+<ol class="steps">
+<li><b>Advisor sign-off.</b> These are regenerated-to-standard playbooks. The product intentionally keeps a human review gate for tax/legal/payroll/entity content. An advisor should sign off before publication, focusing on the residual reviewer notes in the scorecard.</li>
+<li><b>Wire into the seed/apply pipeline.</b> The finished Markdown lives in <code>content/playbooks/lessons/</code>. To publish, fold each into the seed-script content objects (or the admin wiki API) so the existing <code>wiki:playbook</code> apply/verify tooling can stage and verify it to production.</li>
+<li><b>Confirm the flagged values.</b> A small number of figures could not be confirmed against a public source and are marked <code>[confirm with your advisor]</code> in-page. Those are the priority for SME review.</li>
+</ol></section>
+
+<div class="meta">Generated from <code>content/playbooks/scores.json</code>. Method: 56-lesson pipeline (draft → independent adversarial verify + fact-check → revise loop to &gt;90), 352 agent runs across two passes, ~16M subagent tokens. Author drafts on Sonnet; verification/scoring on the session model. Tax year 2026.</div>
+</div></body></html>
