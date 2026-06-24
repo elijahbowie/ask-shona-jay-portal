@@ -322,7 +322,7 @@ function LoginScreen({ onLogin }: { onLogin: (me: AppMe) => void }) {
           )}
           {message ? <p className="notice">{message}</p> : null}
           {devCode ? <p className="microcopy">Local development shows the code so the full login workflow is testable.</p> : null}
-          <p className="trust-footer">Your data is encrypted in transit and shown only inside the Beyond Freedom Financial portal. Shona and Jay review client-specific questions before action.</p>
+          <p className="trust-footer">Your data is encrypted in transit and shown only inside the Beyond Freedom Financial portal. Your advisor reviews client-specific questions before action.</p>
         </div>
       </section>
     </main>
@@ -487,11 +487,11 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
     setHistory((items) =>
       items.map((item) =>
         item.id === entry.id
-          ? { ...item, answer: { ...item.answer, escalationRequired: true, state: "escalated_to_team", escalationReason: "Sent to Shona's team for review." } }
+          ? { ...item, answer: { ...item.answer, escalationRequired: true, state: "escalated_to_team", escalationReason: "Sent to your advisor for review." } }
           : item
       )
     );
-    announce("Sent to Shona's team for review.");
+    announce("Sent to your advisor for review.");
   };
 
   const sendFeedback = async (entry: ConversationEntry, rating: "up" | "down") => {
@@ -499,7 +499,7 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
       method: "POST",
       body: JSON.stringify({ conversationId: entry.answer.conversationId, rating, category: "answer_quality" })
     });
-    announce(rating === "up" ? "Thanks. Feedback saved." : "Thanks. Shona's team can use that to improve the portal.");
+    announce(rating === "up" ? "Thanks. Feedback saved." : "Thanks. Your advisor can use that to improve the portal.");
   };
 
   return (
@@ -508,7 +508,7 @@ function AskView({ me, announce, navigate }: { me: AppMe; announce: (message: st
         <p className="eyebrow">Question intake</p>
         <h1>Ask with the records in mind.</h1>
         <p>
-          Search approved wiki pages, see the source trail, and know when Shona/Jay need to review the facts before action.
+          Search approved wiki pages, see the source trail, and know when your advisor needs to review the facts before action.
         </p>
         <div className="context-strip">
           <span>{me.client?.name || me.client?.email || "Client"}</span>
@@ -581,7 +581,7 @@ function WelcomePrompt({ me, prompts, onPick }: { me: AppMe; prompts: string[]; 
 const promptGroups: Record<string, string[]> = {
   "My Business": [
     "What should I document before reimbursing myself from the business?",
-    "Which business expenses usually need more proof before Shona reviews them?"
+    "Which business expenses usually need more proof before your advisor reviews them?"
   ],
   "My Family": [
     "Should I explore hiring my kids, and what facts should I gather first?",
@@ -822,9 +822,13 @@ function AnswerCard({
         <span className="freshness-badge">Beyond Freedom curriculum</span>
       </div>
       <div className="question-bubble">{entry.question}</div>
-      <button className="review-cta" onClick={onEscalate}>
-        <WarningCircle size={19} weight="light" />
-        <span>{answer.escalationRequired ? "Review request sent" : "Want Shona to review this personally? Usually within 4 hours."}</span>
+      <button
+        className={`review-cta ${answer.escalationRequired ? "sent" : ""}`}
+        onClick={onEscalate}
+        disabled={answer.escalationRequired}
+      >
+        {answer.escalationRequired ? <CheckCircle size={19} weight="light" /> : <WarningCircle size={19} weight="light" />}
+        <span>{answer.escalationRequired ? "Review request sent. Your advisor has this. Usually within 4 hours." : "Want your advisor to review this personally? Usually within 4 hours."}</span>
       </button>
       <div className="answer-copy">
         {answer.answer.split("\n").map((line, index) => (line.trim() ? <p key={index}>{line}</p> : null))}
@@ -902,16 +906,19 @@ function RecommendationCard({ training, navigate }: { training: TrainingRecommen
 function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
   const [items, setItems] = useState<WikiPage[]>([]);
   const [recommended, setRecommended] = useState<PlanItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const recentSearches = readStorage<string[]>("learn-recent-searches", []);
   const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((item) => categoryFor(item.strategyKey))))], [items]);
 
   useEffect(() => {
-    api<{ trainings: WikiPage[]; recommended: PlanItem[] }>("/api/trainings").then((data) => {
-      setItems(data.trainings);
-      setRecommended(data.recommended || []);
-    });
+    api<{ trainings: WikiPage[]; recommended: PlanItem[] }>("/api/trainings")
+      .then((data) => {
+        setItems(data.trainings);
+        setRecommended(data.recommended || []);
+      })
+      .finally(() => setLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -971,9 +978,9 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
         </section>
       ) : null}
       <div className="vault-toolbar motion-in">
-        <div className="search-box">
-          <MagnifyingGlass size={18} weight="light" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search strategy, training, or question" />
+        <div className="search-box" role="search">
+          <MagnifyingGlass size={18} weight="light" aria-hidden="true" />
+          <input type="search" aria-label="Search the strategy library" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search strategy, training, or question" />
         </div>
         <div className="vault-count">
           <strong>{filtered.length}</strong>
@@ -991,24 +998,49 @@ function TrainingVault({ navigate }: { navigate: (path: string) => void }) {
           {recentSearches.map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}
         </div>
       ) : null}
-      <div className="learn-grid">
-        {filtered.map((item) => {
-          const progress = progressFor(item.slug);
-          return (
-            <button key={item.id} className="learn-card stack-card reveal" onClick={() => navigate(`/learn/${item.slug}`)}>
-              <div className="learn-card-top">
-                <span>{categoryFor(item.strategyKey)}</span>
-                {isNewPage(item) ? <strong>New</strong> : null}
-              </div>
-              <h2>{item.title}</h2>
-              <p>{item.summary}</p>
-              <div className="progress-track" aria-label={`Reading progress ${progress}%`}>
-                <i style={{ width: `${progress}%` }} />
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {!loaded ? (
+        <div className="learn-grid" aria-hidden="true">
+          {[0, 1, 2, 3].map((row) => (
+            <div className="learn-card learn-card-skeleton" key={row}>
+              <div className="skeleton-line short" />
+              <div className="skeleton-line wide" />
+              <div className="skeleton-line" />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length ? (
+        <div className="learn-grid">
+          {filtered.map((item) => {
+            const progress = progressFor(item.slug);
+            return (
+              <button key={item.id} className="learn-card stack-card reveal" onClick={() => navigate(`/learn/${item.slug}`)}>
+                <div className="learn-card-top">
+                  <span>{categoryFor(item.strategyKey)}</span>
+                  {isNewPage(item) ? <strong>New</strong> : null}
+                </div>
+                <h2>{item.title}</h2>
+                <p>{item.summary}</p>
+                <div className="progress-track" aria-label={`Reading progress ${progress}%`}>
+                  <i style={{ width: `${progress}%` }} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="learn-empty motion-in">
+          <MagnifyingGlass size={30} weight="light" />
+          <h2>No pages match your search.</h2>
+          <p>
+            {query ? `Nothing matched “${query}.”` : "This category has no pages yet."} Try another term, or clear the
+            filters to browse all {items.length} pages.
+          </p>
+          <button className="secondary-button" onClick={() => { setQuery(""); setCategory("All"); }}>
+            <span>Clear search</span>
+            <span className="button-orb"><ArrowRight size={17} /></span>
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -1203,7 +1235,7 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
       <div className="page-intro motion-in">
         <p className="eyebrow">Starter Checklist</p>
         <h1>Gather records before review.</h1>
-        <p>This is not your personalized tax plan from Shona/Jay. Use it to gather records and open the right lessons; when something affects payroll, tax filings, or how your business is set up, check with Shona/Jay before you act.</p>
+        <p>This is not your personalized tax plan from your advisor. Use it to gather records and open the right lessons; when something affects payroll, tax filings, or how your business is set up, check with your advisor before you act.</p>
       </div>
       <div className="plan-summary motion-in">
         <Gauge size={28} weight="light" />
@@ -1235,7 +1267,7 @@ function PlanView({ announce }: { announce: (message: string) => void }) {
       {items.length > 0 && complete === items.length ? (
         <div className="completion-card motion-in">
           <CheckCircle size={24} weight="fill" />
-          <span>Your starter checklist is complete. Bring personalized tax-plan questions to Shona/Jay.</span>
+          <span>Your starter checklist is complete. Bring personalized tax-plan questions to your advisor.</span>
         </div>
       ) : null}
     </section>
@@ -1254,8 +1286,8 @@ function MoreView({ me, navigate, logout }: { me: AppMe; navigate: (path: string
       <div className="advisor-card motion-in">
         <ShieldCheck size={30} weight="light" />
         <div>
-          <span className="mini-label">Advisor team</span>
-          <h2>Shona Bell & Jay Moore</h2>
+          <span className="mini-label">Beyond Freedom Financial</span>
+          <h2>Your advisor</h2>
           <p>Next review window: weekly client call or personal escalation.</p>
         </div>
       </div>
@@ -1434,7 +1466,10 @@ function ReviewGroup({ title, items, empty }: { title: string; items: DashboardD
         <div className="review-items">
           {items.slice(0, 8).map((item) => (
             <article key={item.id} className={`review-item severity-${item.severity}`}>
-              <span>{item.category}{item.count ? ` · ${item.count}` : ""}</span>
+              <span className="review-item-top">
+                <span className={`severity-tag severity-${item.severity}`}>{item.severity}</span>
+                <span>{item.category}{item.count ? ` · ${item.count}` : ""}</span>
+              </span>
               <strong>{item.label}</strong>
               <p>{item.detail}</p>
               {item.targetUrl ? <a href={item.targetUrl}>Open</a> : null}
@@ -1549,8 +1584,6 @@ function AdminAssets() {
     }
   };
 
-  const cols = "2fr 1.5fr 1.5fr 9rem";
-
   return (
     <section className="admin-page">
       <AdminHeader title="Download Assets" subtitle="Files served from the import script. Download to verify, or delete to remove from lessons and storage." />
@@ -1559,18 +1592,18 @@ function AdminAssets() {
       ) : (
         <section className="table-shell motion-in">
           <h2>{assets.length} assets</h2>
-          <div className="data-table" role="table" aria-label="Download assets">
-            <div className="data-row head" role="row" style={{ gridTemplateColumns: cols }}>
+          <div className="data-table assets-table" role="table" aria-label="Download assets">
+            <div className="data-row asset-row head" role="row">
               <span role="columnheader">Title</span>
-              <span role="columnheader">Lesson</span>
-              <span role="columnheader">File</span>
+              <span className="asset-lesson" role="columnheader">Lesson</span>
+              <span className="asset-file" role="columnheader">File</span>
               <span role="columnheader">Actions</span>
             </div>
             {assets.map((asset) => (
-              <div className="data-row" key={asset.id} role="row" style={{ gridTemplateColumns: cols }}>
+              <div className="data-row asset-row" key={asset.id} role="row">
                 <span role="cell">{asset.title}</span>
-                <span role="cell">{asset.linkedSlug}</span>
-                <span role="cell">{asset.filename}</span>
+                <span className="asset-lesson" role="cell">{asset.linkedSlug}</span>
+                <span className="asset-file" role="cell">{asset.filename}</span>
                 <span className="asset-actions" role="cell">
                   <a
                     className="text-button"

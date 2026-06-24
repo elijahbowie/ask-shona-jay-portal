@@ -531,7 +531,7 @@ function composeAnswer(question: string, chunks: RetrievedChunk[], risk: string,
     .slice(0, 2);
   const body = [...sentences, ...support].join(" ");
   const close = escalationRequired
-    ? "Because your question may depend on your exact facts, use the escalation option so Shona/Jay's team can confirm the right implementation path."
+    ? "Because your question may depend on your exact facts, use the escalation option so your advisor can confirm the right implementation path."
     : "Use the cited training before taking action, and escalate if your facts differ from the examples in the material.";
   return `${intro}\n\n${body}\n\n${close}`;
 }

@@ -257,6 +257,36 @@
   transition: width var(--dur-slow) var(--ease-out-expressive);
 }
 
+/* No-results / loading states — a populated grid never collapses to a blank
+   stripe of border. Empty state names the cause and offers the way out. */
+.learn-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-10) var(--space-6);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--brand-sky-strong);
+}
+
+.learn-empty h2 {
+  font-size: var(--type-h2-size);
+}
+
+.learn-empty p {
+  color: var(--ink-secondary);
+  max-width: 52ch;
+}
+
+.learn-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+
 @media (max-width: 760px) {
   .learn-card {
     grid-template-columns: 1fr;

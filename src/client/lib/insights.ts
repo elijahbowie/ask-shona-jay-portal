@@ -31,10 +31,10 @@ export function friendlyEntity(value?: string): string {
 export function readableState(state: string): string {
   const labels: Record<string, string> = {
     answered_with_citations: "Answer from approved sources",
-    needs_more_context: "Shona may need more details",
+    needs_more_context: "Your advisor may need more details",
     cpa_review_recommended: "Recommended for expert review",
-    cannot_answer_from_approved_sources: "Shona will find the answer",
-    escalated_to_team: "Sent to Shona's team"
+    cannot_answer_from_approved_sources: "Your advisor will find the answer",
+    escalated_to_team: "Sent to your advisor"
   };
   return labels[state] || readable(state);
 }
@@ -44,7 +44,7 @@ export function suggestedPrompts(me: AppMe): string[] {
   const prompts = [
     "What should I do before estimated taxes are due?",
     "Which Learn pages should I review before my next strategy call?",
-    "What documents should I gather before asking Shona to review this?"
+    "What documents should I gather before asking your advisor to review this?"
   ];
   if (tags.has("hire-kids") || me.client?.hasChildren) {
     prompts.unshift("Should I hire my kids, and what facts should I gather first?");
@@ -119,7 +119,7 @@ export function impactCopy(answer: ChatAnswer): string {
   if (answer.escalationRequired) {
     return "A quick review now can prevent a wrong filing, payroll, or entity decision later.";
   }
-  return "Use this as a fact-gathering step before Shona/Jay make a recommendation.";
+  return "Use this as a fact-gathering step before your advisor makes a recommendation.";
 }
 
 export function cleanCitationExcerpt(input: string): string {
@@ -132,7 +132,7 @@ export function cleanCitationExcerpt(input: string): string {
 export function followUpPrompts(question: string, answer: ChatAnswer): string[] {
   const lower = `${question} ${answer.answer}`.toLowerCase();
   if (lower.includes("kid") || lower.includes("payroll")) {
-    return ["What documents should I gather first?", "When should Shona/Jay review this?", "What common mistakes should I avoid?"];
+    return ["What documents should I gather first?", "When should your advisor review this?", "What common mistakes should I avoid?"];
   }
   if (lower.includes("augusta") || lower.includes("rental")) {
     return ["What should be in the agenda?", "What proof of rental value should I keep?", "When does this need expert review?"];
@@ -140,7 +140,7 @@ export function followUpPrompts(question: string, answer: ChatAnswer): string[] 
   if (lower.includes("estimated")) {
     return ["What numbers should I bring?", "What changed since last quarter?", "Which Learn page explains this?"];
   }
-  return ["What facts would make this answer stronger?", "Which Learn page should I open?", "Should Shona/Jay review this?"];
+  return ["What facts would make this answer stronger?", "Which Learn page should I open?", "Should your advisor review this?"];
 }
 
 export function categoryFor(strategyKey: string): string {
@@ -174,5 +174,5 @@ export function planCommitment(item: PlanItem): string {
   if (item.strategyKey.includes("augusta")) {
     return "When you are ready, gather agenda, attendees, notes, and comparable rates.";
   }
-  return "When you are ready, gather facts and bring client-specific decisions to Shona/Jay.";
+  return "When you are ready, gather facts and bring client-specific decisions to your advisor.";
 }
