@@ -522,6 +522,18 @@
   transform: translateY(-1px);
 }
 
+/* Confirmed state is calm, not alarmed — the safety net worked (RATIONALE §7). */
+.review-cta.sent {
+  background: var(--signal-success-soft);
+  border-color: rgba(10, 107, 80, 0.3);
+  color: var(--signal-success-ink);
+  cursor: default;
+}
+
+.review-cta.sent:hover {
+  transform: none;
+}
+
 .answer-copy {
   display: flex;
   flex-direction: column;
@@ -581,14 +593,13 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--surface-line);
   background: var(--surface-raised);
-  border-left: 3px solid var(--brand-sky);
 }
 
 .citation-card span {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ink-tertiary);
+  color: var(--brand-sky-strong);
   font-weight: 600;
 }
 

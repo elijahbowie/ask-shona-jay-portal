@@ -206,7 +206,10 @@ select:focus {
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--ink-quaternary);
+  /* Placeholder is text: it must clear 4.5:1. --ink-quaternary (#8590a8 ≈ 3.1:1)
+     fails AA, so placeholders use --ink-tertiary (5.4:1) instead. */
+  color: var(--ink-tertiary);
+  opacity: 1;
 }
 
 .check-control {

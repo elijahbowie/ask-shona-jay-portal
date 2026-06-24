@@ -143,22 +143,56 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--surface-raised);
-  border-left: 3px solid var(--surface-line-strong);
+  border: 1px solid var(--surface-line);
 }
 
+/* Severity is carried by the labelled .severity-tag (text + color), never by
+   color alone — WCAG 1.4.1. The left edge reinforces it for sighted scanning. */
 .review-item.severity-high {
-  border-left-color: var(--signal-danger);
+  box-shadow: inset 3px 0 0 var(--signal-danger);
 }
 
 .review-item.severity-medium {
-  border-left-color: var(--signal-warn);
+  box-shadow: inset 3px 0 0 var(--signal-warn);
 }
 
 .review-item.severity-low {
-  border-left-color: var(--brand-sky);
+  box-shadow: inset 3px 0 0 var(--brand-sky);
 }
 
-.review-item span {
+.review-item-top {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.severity-tag {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.severity-tag.severity-high {
+  background: var(--signal-danger-soft);
+  color: var(--signal-danger);
+}
+
+.severity-tag.severity-medium {
+  background: var(--signal-warn-soft);
+  color: var(--signal-warn-ink);
+}
+
+.severity-tag.severity-low {
+  background: var(--brand-mist);
+  color: var(--brand-sky-strong);
+}
+
+.review-item > span,
+.review-item-top > span {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -278,11 +312,25 @@
   overflow: visible;
 }
 
+/* Assets table owns its own column track (replacing a fragile inline style that
+   could not be overridden by the mobile media query below). */
+.assets-table .asset-row {
+  grid-template-columns: 2fr 1.5fr 1.5fr 9rem;
+}
+
 @media (max-width: 640px) {
-  .data-row {
+  .data-row:not(.asset-row) {
     grid-template-columns: 1fr 1fr;
   }
-  .data-row span:nth-child(n + 3) {
+  .data-row:not(.asset-row) span:nth-child(n + 3) {
+    display: none;
+  }
+  /* Assets collapse to Title + Actions; Lesson and File drop, Actions stay. */
+  .assets-table .asset-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .asset-row .asset-lesson,
+  .asset-row .asset-file {
     display: none;
   }
 }

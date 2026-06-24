@@ -29,6 +29,7 @@ worker-configuration.d.ts
 .transcript-knowledge-runs/
 .wiki-playbook-runs/
 .official-lessons-runs/
+.playbook-import-runs/
 raw/
 
 # Proprietary client training media and generated transcripts

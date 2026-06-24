@@ -294,7 +294,7 @@ This page supports questions about ${strategyKey.replace(/-/g, " ")} when the cl
 
 ## Escalation Rule
 
-If the answer would require personalized tax planning or a filing position, the portal should route the question to Shona/Jay's team for review.
+If the answer would require personalized tax planning or a filing position, the portal should route the question to your advisor for review.
 `;
 }
 
