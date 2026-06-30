@@ -262,7 +262,7 @@ function LoginScreen({ onLogin }: { onLogin: (me: AppMe) => void }) {
           <ShieldCheck size={18} weight="light" />
           Beyond Freedom Financial
         </div>
-        <h1>Tax strategy guidance with receipts.</h1>
+        <h1>Curated Tax Strategy. Backed by Law. Built for Results.</h1>
         <p>
           Ask Advisor turns approved education into clear answers, source links, and team review when the facts need a human.
         </p>
