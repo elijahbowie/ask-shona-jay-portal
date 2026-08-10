@@ -7,7 +7,8 @@
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/webhooks/*"]
   },
   "vars": {
     "ENVIRONMENT": "development",
@@ -131,12 +132,7 @@
     },
     "production": {
       "name": "ask-shona-jay-portal",
-      "routes": [
-        {
-          "pattern": "ask.beyondfreedomfinancial.com",
-          "custom_domain": true
-        }
-      ],
+      "workers_dev": true,
       "vars": {
         "ENVIRONMENT": "production",
         "APP_ORIGIN": "https://ask.beyondfreedomfinancial.com",
